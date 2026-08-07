@@ -141,7 +141,6 @@ function sizeWarningFor(text: string): string | undefined {
   if (bytes >= LARGE_DOCUMENT_BYTES) {
     return `Large document (${formatBytes(bytes)}). Heavy work runs in a background worker.`;
   }
-  return;
 }
 
 /**

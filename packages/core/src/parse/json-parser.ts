@@ -32,7 +32,7 @@ function toParseError(cause: unknown): ParseError {
     return { message: cause instanceof Error ? cause.message : String(cause) };
   }
 
-  const message = cause.message;
+  const { message } = cause;
   const match = POSITION_PATTERN.exec(message);
   const position =
     match?.[1] === undefined ? undefined : Number.parseInt(match[1], 10);

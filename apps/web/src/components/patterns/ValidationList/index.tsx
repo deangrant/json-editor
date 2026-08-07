@@ -1,3 +1,9 @@
+import type {
+  JsonPath,
+  ValidationIssue,
+} from "@json-editor/core/types/json.types.js";
+import { useCallback } from "react";
+
 import styles from "./index.module.css";
 import type { ValidationListProps } from "./index.types.js";
 
@@ -14,19 +20,38 @@ export function ValidationList({ issues, onSelectPath }: ValidationListProps) {
   return (
     <ul className={styles.list}>
       {issues.map((issue) => (
-        <li key={`${issue.source}:${issue.message}:${issue.path.join(".")}`}>
-          <button
-            className={styles.item}
-            onClick={() => {
-              onSelectPath?.(issue.path);
-            }}
-            type="button"
-          >
-            <span className={styles.source}>{issue.source}</span>
-            {issue.message}
-          </button>
-        </li>
+        <ValidationIssueItem
+          issue={issue}
+          key={`${issue.source}:${issue.message}:${issue.path.join(".")}`}
+          onSelectPath={onSelectPath}
+        />
       ))}
     </ul>
+  );
+}
+
+/**
+ * Single clickable validation issue row.
+ * @param props Issue item props.
+ * @returns Issue button row.
+ */
+function ValidationIssueItem({
+  issue,
+  onSelectPath,
+}: {
+  issue: ValidationIssue;
+  onSelectPath?: ((path: JsonPath) => void) | undefined;
+}) {
+  const handleClick = useCallback(() => {
+    onSelectPath?.(issue.path);
+  }, [issue.path, onSelectPath]);
+
+  return (
+    <li>
+      <button className={styles.item} onClick={handleClick} type="button">
+        <span className={styles.source}>{issue.source}</span>
+        {issue.message}
+      </button>
+    </li>
   );
 }

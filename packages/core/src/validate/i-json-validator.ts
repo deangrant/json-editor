@@ -9,5 +9,5 @@ export interface IJsonValidator {
    * @param data Parsed JSON value.
    * @returns Validation issues (empty when valid).
    */
-  validate(data: JsonValue): ValidationIssue[];
+  validate: (data: JsonValue) => ValidationIssue[];
 }

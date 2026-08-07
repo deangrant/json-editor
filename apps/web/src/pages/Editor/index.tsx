@@ -1,4 +1,4 @@
-import { lazy, type ReactNode, Suspense } from "react";
+import { lazy, type ReactNode, Suspense, useCallback } from "react";
 
 import { EditorToolbar } from "../../components/containers/EditorToolbar/index.js";
 import { SchemaPanel } from "../../components/containers/SchemaPanel/index.js";
@@ -25,18 +25,22 @@ export function EditorPage() {
     useDocument();
   useHistoryShortcuts();
 
+  const handleReplace = useCallback(() => {
+    replaceInText(state.searchQuery, state.replaceValue, false);
+  }, [replaceInText, state.replaceValue, state.searchQuery]);
+
+  const handleReplaceAll = useCallback(() => {
+    replaceInText(state.searchQuery, state.replaceValue, true);
+  }, [replaceInText, state.replaceValue, state.searchQuery]);
+
   return (
     <EditorLayout
       main={<EditorMain mode={state.mode} />}
       search={
         <SearchReplaceBar
           onQueryChange={setSearchQuery}
-          onReplace={() => {
-            replaceInText(state.searchQuery, state.replaceValue, false);
-          }}
-          onReplaceAll={() => {
-            replaceInText(state.searchQuery, state.replaceValue, true);
-          }}
+          onReplace={handleReplace}
+          onReplaceAll={handleReplaceAll}
           onReplaceChange={setReplaceValue}
           query={state.searchQuery}
           replaceValue={state.replaceValue}
@@ -89,5 +93,4 @@ function EditorSidePanel({
   if (panel === "transform") {
     return <TransformPanel />;
   }
-  return;
 }

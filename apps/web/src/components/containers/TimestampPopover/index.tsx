@@ -1,4 +1,5 @@
 import { formatTimestamp } from "@json-editor/core/detect/value-detect.js";
+import { type ChangeEvent, useCallback } from "react";
 
 import styles from "./index.module.css";
 import type { TimestampPopoverProps } from "./index.types.js";
@@ -15,6 +16,16 @@ export function TimestampPopover({
 }: TimestampPopoverProps) {
   const localValue = toLocalInputValue(epochMs);
 
+  const handleChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const next = Date.parse(event.target.value);
+      if (!Number.isNaN(next)) {
+        onChangeEpochMs(next);
+      }
+    },
+    [onChangeEpochMs],
+  );
+
   return (
     <span className={styles.wrap}>
       <span className={styles.label}>
@@ -23,12 +34,7 @@ export function TimestampPopover({
       <input
         aria-label="Edit timestamp"
         className={styles.input}
-        onChange={(event) => {
-          const next = Date.parse(event.target.value);
-          if (!Number.isNaN(next)) {
-            onChangeEpochMs(next);
-          }
-        }}
+        onChange={handleChange}
         type="datetime-local"
         value={localValue}
       />

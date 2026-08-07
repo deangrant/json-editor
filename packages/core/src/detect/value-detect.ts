@@ -40,8 +40,6 @@ export function detectValue(value: unknown): ValueDetection | undefined {
   if (value >= 1_000_000_000 && value < 10_000_000_000) {
     return { epochMs: value * 1000, kind: "timestamp", unit: "s" };
   }
-
-  return;
 }
 
 /**
@@ -64,9 +62,7 @@ export function formatTimestamp(epochMs: number, locale?: string): string {
  */
 function normalizeHex(hex: string): string {
   if (hex.length === 4) {
-    const r = hex[1];
-    const g = hex[2];
-    const b = hex[3];
+    const [, r, g, b] = hex;
     return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
   }
   return hex.toLowerCase();

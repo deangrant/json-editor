@@ -11,7 +11,7 @@ export interface ITransformEngine {
    * @param program Transform program.
    * @returns Updated root, or an error message.
    */
-  apply(root: JsonValue, program: TransformProgram): TransformResult;
+  apply: (root: JsonValue, program: TransformProgram) => TransformResult;
 
   /**
    * Previews the value at `program.rootPath` after ops (without writing back).
@@ -19,5 +19,5 @@ export interface ITransformEngine {
    * @param program Transform program.
    * @returns Transformed subtree, or an error message.
    */
-  preview(root: JsonValue, program: TransformProgram): TransformResult;
+  preview: (root: JsonValue, program: TransformProgram) => TransformResult;
 }

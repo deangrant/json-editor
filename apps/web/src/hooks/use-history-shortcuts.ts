@@ -14,7 +14,7 @@ export function useHistoryShortcuts(): void {
       if (!modifier || event.key.toLowerCase() !== "z") {
         return;
       }
-      const target = event.target;
+      const { target } = event;
       if (
         target instanceof HTMLElement &&
         target.closest("[data-cm-editor='true']")

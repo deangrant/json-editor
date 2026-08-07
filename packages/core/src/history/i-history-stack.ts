@@ -4,31 +4,31 @@
  */
 export interface IHistoryStack<T> {
   /** Whether a redo operation is available. */
-  canRedo(): boolean;
+  canRedo: () => boolean;
   /** Whether an undo operation is available. */
-  canUndo(): boolean;
+  canUndo: () => boolean;
 
   /** Clears all history. */
-  clear(): void;
+  clear: () => void;
 
   /** Current snapshot, if any. */
-  current(): T | undefined;
+  current: () => T | undefined;
 
   /**
    * Records a new snapshot and clears the redo branch.
    * @param snapshot Document snapshot to store.
    */
-  push(snapshot: T): void;
+  push: (snapshot: T) => void;
 
   /**
    * Moves one step forward.
    * @returns Next snapshot, or `undefined` if none.
    */
-  redo(): T | undefined;
+  redo: () => T | undefined;
 
   /**
    * Moves one step backward.
    * @returns Previous snapshot, or `undefined` if none.
    */
-  undo(): T | undefined;
+  undo: () => T | undefined;
 }

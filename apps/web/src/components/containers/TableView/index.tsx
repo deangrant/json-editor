@@ -1,6 +1,12 @@
 import { getAtPath, setAtPath } from "@json-editor/core/path/json-path.js";
 import type { JsonValue } from "@json-editor/core/types/json.types.js";
-import { useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  type UIEvent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 
 import { useDocument } from "../../../hooks/use-document.js";
 import { getVirtualWindow } from "../../../utils/virtual-window.js";
@@ -22,6 +28,31 @@ export function TableView() {
     [state.json, state.selection],
   );
 
+  const handleScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+    setScrollTop(event.currentTarget.scrollTop);
+    setViewportHeight(event.currentTarget.clientHeight);
+  }, []);
+
+  const handleViewportRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node && viewportHeight === 480) {
+        setViewportHeight(node.clientHeight);
+      }
+    },
+    [viewportHeight],
+  );
+
+  const updateCell = useCallback(
+    (rowKey: string | number, column: string, text: string) => {
+      if (state.json === undefined || !table) {
+        return;
+      }
+      const path = [...table.rootPath, rowKey, column];
+      setJson(setAtPath(state.json, path, parseCell(text)));
+    },
+    [setJson, state.json, table],
+  );
+
   if (!table) {
     return (
       <div className={styles.empty}>
@@ -39,30 +70,11 @@ export function TableView() {
   );
   const visible = table.rows.slice(window.start, window.end);
 
-  const updateCell = (
-    rowKey: string | number,
-    column: string,
-    text: string,
-  ) => {
-    if (state.json === undefined) {
-      return;
-    }
-    const path = [...table.rootPath, rowKey, column];
-    setJson(setAtPath(state.json, path, parseCell(text)));
-  };
-
   return (
     <div
       className={styles.root}
-      onScroll={(event) => {
-        setScrollTop(event.currentTarget.scrollTop);
-        setViewportHeight(event.currentTarget.clientHeight);
-      }}
-      ref={(node) => {
-        if (node && viewportHeight === 480) {
-          setViewportHeight(node.clientHeight);
-        }
-      }}
+      onScroll={handleScroll}
+      ref={handleViewportRef}
     >
       <table className={styles.table}>
         <thead>
@@ -82,20 +94,12 @@ export function TableView() {
             </tr>
           ) : null}
           {visible.map((row) => (
-            <tr key={String(row.key)} style={{ height: ROW_HEIGHT }}>
-              <td className={`${styles.td} ${styles.index}`}>{row.key}</td>
-              {table.columns.map((column) => (
-                <td className={styles.td} key={column}>
-                  <input
-                    aria-label={`${String(row.key)}.${column}`}
-                    onChange={(event) => {
-                      updateCell(row.key, column, event.target.value);
-                    }}
-                    value={stringifyCell(row.values[column])}
-                  />
-                </td>
-              ))}
-            </tr>
+            <TableRow
+              columns={table.columns}
+              key={String(row.key)}
+              onUpdateCell={updateCell}
+              row={row}
+            />
           ))}
           {window.end < table.rows.length ? (
             <tr
@@ -109,6 +113,73 @@ export function TableView() {
         </tbody>
       </table>
     </div>
+  );
+}
+
+/**
+ * One table body row with editable cells.
+ * @param props Row props.
+ * @returns Table row.
+ */
+function TableRow({
+  row,
+  columns,
+  onUpdateCell,
+}: {
+  row: {
+    key: string | number;
+    values: Record<string, JsonValue | undefined>;
+  };
+  columns: string[];
+  onUpdateCell: (rowKey: string | number, column: string, text: string) => void;
+}) {
+  return (
+    <tr style={{ height: ROW_HEIGHT }}>
+      <td className={`${styles.td} ${styles.index}`}>{row.key}</td>
+      {columns.map((column) => (
+        <TableCell
+          column={column}
+          key={column}
+          onUpdateCell={onUpdateCell}
+          rowKey={row.key}
+          value={row.values[column]}
+        />
+      ))}
+    </tr>
+  );
+}
+
+/**
+ * Editable table cell input.
+ * @param props Cell props.
+ * @returns Table cell.
+ */
+function TableCell({
+  rowKey,
+  column,
+  value,
+  onUpdateCell,
+}: {
+  rowKey: string | number;
+  column: string;
+  value: JsonValue | undefined;
+  onUpdateCell: (rowKey: string | number, column: string, text: string) => void;
+}) {
+  const handleChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      onUpdateCell(rowKey, column, event.target.value);
+    },
+    [column, onUpdateCell, rowKey],
+  );
+
+  return (
+    <td className={styles.td}>
+      <input
+        aria-label={`${String(rowKey)}.${column}`}
+        onChange={handleChange}
+        value={stringifyCell(value)}
+      />
+    </td>
   );
 }
 
@@ -152,8 +223,6 @@ function buildTable(
       }
     }
   }
-
-  return;
 }
 
 /**
@@ -211,8 +280,6 @@ function toTable(
       })),
     };
   }
-
-  return;
 }
 
 /**

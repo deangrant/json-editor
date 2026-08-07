@@ -6,7 +6,7 @@ import { App } from "./app.js";
 describe("App", () => {
   it("renders the editor chrome", () => {
     const html = renderToStaticMarkup(<App />);
-    expect(html).toContain("JSON Editor");
+    expect(html).toContain("Editor mode");
     expect(html).toContain("Open");
   });
 });

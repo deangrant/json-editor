@@ -17,7 +17,7 @@ export async function openJsonFile(): Promise<
           },
         ],
       });
-      const handle = handles[0];
+      const [handle] = handles;
       if (!handle) {
         return;
       }

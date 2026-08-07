@@ -3,7 +3,7 @@ import type {
   TransformOp,
   TransformProgram,
 } from "@json-editor/core/query/transform.types.js";
-import { useMemo, useState } from "react";
+import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 
 import { useDocument } from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
@@ -90,6 +90,70 @@ export function TransformPanel() {
     sortField,
   ]);
 
+  const handleRootPathChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setRootPathText(event.target.value);
+    },
+    [],
+  );
+
+  const handleFilterFieldChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setFilterField(event.target.value);
+    },
+    [],
+  );
+
+  const handleFilterOperatorChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      setFilterOperator(event.target.value as FilterOperator);
+    },
+    [],
+  );
+
+  const handleFilterValueChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setFilterValue(event.target.value);
+    },
+    [],
+  );
+
+  const handleSortFieldChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setSortField(event.target.value);
+    },
+    [],
+  );
+
+  const handleSortDirectionChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      setSortDirection(event.target.value as "asc" | "desc");
+    },
+    [],
+  );
+
+  const handlePickFieldsChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setPickFields(event.target.value);
+    },
+    [],
+  );
+
+  const handleLimitChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setLimit(event.target.value);
+    },
+    [],
+  );
+
+  const handlePreview = useCallback(() => {
+    runPromise(previewTransform(program));
+  }, [previewTransform, program]);
+
+  const handleApply = useCallback(() => {
+    runPromise(applyTransform(program));
+  }, [applyTransform, program]);
+
   return (
     <aside className={styles.panel}>
       <h2 className={styles.title}>Transform</h2>
@@ -99,45 +163,33 @@ export function TransformPanel() {
       <div className={styles.grid}>
         <Input
           label="Root path"
-          onChange={(event) => {
-            setRootPathText(event.target.value);
-          }}
+          onChange={handleRootPathChange}
           value={rootPathText}
         />
         <Input
           label="Filter field"
-          onChange={(event) => {
-            setFilterField(event.target.value);
-          }}
+          onChange={handleFilterFieldChange}
           value={filterField}
         />
         <Select
           label="Filter operator"
-          onChange={(event) => {
-            setFilterOperator(event.target.value as FilterOperator);
-          }}
+          onChange={handleFilterOperatorChange}
           options={OPERATORS}
           value={filterOperator}
         />
         <Input
           label="Filter value"
-          onChange={(event) => {
-            setFilterValue(event.target.value);
-          }}
+          onChange={handleFilterValueChange}
           value={filterValue}
         />
         <Input
           label="Sort field"
-          onChange={(event) => {
-            setSortField(event.target.value);
-          }}
+          onChange={handleSortFieldChange}
           value={sortField}
         />
         <Select
           label="Sort direction"
-          onChange={(event) => {
-            setSortDirection(event.target.value as "asc" | "desc");
-          }}
+          onChange={handleSortDirectionChange}
           options={[
             { label: "Ascending", value: "asc" },
             { label: "Descending", value: "desc" },
@@ -146,33 +198,18 @@ export function TransformPanel() {
         />
         <Input
           label="Pick fields (comma-separated)"
-          onChange={(event) => {
-            setPickFields(event.target.value);
-          }}
+          onChange={handlePickFieldsChange}
           value={pickFields}
         />
-        <Input
-          label="Limit"
-          onChange={(event) => {
-            setLimit(event.target.value);
-          }}
-          value={limit}
-        />
+        <Input label="Limit" onChange={handleLimitChange} value={limit} />
       </div>
       <div className={styles.actions}>
-        <Button
-          onClick={() => {
-            runPromise(previewTransform(program));
-          }}
-          variant="secondary"
-        >
+        <Button onClick={handlePreview} variant="secondary">
           Preview
         </Button>
         <Button
           disabled={state.json === undefined}
-          onClick={() => {
-            runPromise(applyTransform(program));
-          }}
+          onClick={handleApply}
           variant="primary"
         >
           Apply

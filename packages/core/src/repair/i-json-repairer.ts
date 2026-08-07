@@ -12,5 +12,5 @@ export interface IJsonRepairer {
    * @param text Possibly invalid JSON text.
    * @returns Repaired text, or a failure message.
    */
-  repair(text: string): RepairResult;
+  repair: (text: string) => RepairResult;
 }

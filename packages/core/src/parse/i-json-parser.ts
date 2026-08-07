@@ -14,5 +14,5 @@ export interface IJsonParser {
    * @param text Raw JSON text.
    * @returns Success with value, or a structured parse error.
    */
-  parse(text: string): ParseResult;
+  parse: (text: string) => ParseResult;
 }
