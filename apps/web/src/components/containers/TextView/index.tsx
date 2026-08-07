@@ -23,6 +23,7 @@ export function TextView() {
   const viewRef = useRef<CodeMirrorView | null>(null);
   const setTextRef = useRef(setText);
   const initialTextRef = useRef(state.text);
+  const applyingExternalChangeRef = useRef(false);
 
   useEffect(() => {
     setTextRef.current = setText;
@@ -85,7 +86,7 @@ export function TextView() {
               ...foldKeymap,
             ]),
             EditorView.updateListener.of((update) => {
-              if (update.docChanged) {
+              if (update.docChanged && !applyingExternalChangeRef.current) {
                 setTextRef.current(update.state.doc.toString());
               }
             }),
@@ -119,6 +120,7 @@ export function TextView() {
     }
     const current = view.state.doc.toString();
     if (current !== state.text) {
+      applyingExternalChangeRef.current = true;
       view.dispatch({
         changes: {
           from: 0,
@@ -126,6 +128,7 @@ export function TextView() {
           to: current.length,
         },
       });
+      applyingExternalChangeRef.current = false;
     }
   }, [state.text]);
 
