@@ -6,25 +6,25 @@ packages:
 
 # Shared dependency versions referenced by packages via `catalog:`.
 catalog:
-  "@codemirror/commands": 6.8.0
-  "@codemirror/lang-json": 6.0.1
-  "@codemirror/language": 6.10.8
-  "@codemirror/search": 6.5.10
-  "@codemirror/state": 6.5.0
-  "@codemirror/view": 6.36.1
-  "@fontsource/ibm-plex-mono": 5.2.5
-  "@fontsource/ibm-plex-sans": 5.2.5
-  "@types/node": 22.13.4
-  "@types/react": 19.0.8
-  "@types/react-dom": 19.0.3
+  "@codemirror/commands": 6.10.4
+  "@codemirror/lang-json": 6.0.2
+  "@codemirror/language": 6.12.4
+  "@codemirror/search": 6.7.1
+  "@codemirror/state": 6.7.1
+  "@codemirror/view": 6.43.6
+  "@fontsource/ibm-plex-mono": 5.2.7
+  "@fontsource/ibm-plex-sans": 5.2.8
+  "@types/node": 26.1.1
+  "@types/react": 19.2.17
+  "@types/react-dom": 19.2.3
   "@vitejs/plugin-react": 4.3.4
-  ajv: 8.17.1
-  jsonrepair: 3.12.0
-  react: 19.1.1
+  ajv: 8.20.0
+  jsonrepair: 3.15.0
+  react: 19.2.7
   react-dom: 19.1.1
-  typescript: 5.8.3
-  vite: 6.3.5
-  vitest: 3.0.5
+  typescript: 7.0.2
+  vite: 8.1.5
+  vitest: 4.1.10
 
 # Dependency install/build scripts run only when listed here. true = allow,
 # false = deny; unlisted packages fail install (strictDepBuilds).
@@ -50,6 +50,7 @@ minimumReleaseAge: 30240
 minimumReleaseAgeExclude:
   - brace-expansion@5.0.9 # CVE-2026-69152 fixed in 5.0.9 (2026-07-30T10:00:32.762Z).
   - fast-uri@3.1.5 # CVE-2026-18446, fixed in 3.1.5 (2026-07-31T09:16:56.212Z).
+  - postcss@8.5.23 # CVE-2026-69153, fixed in 8.5.23 (2026-07-24T17:05:13.876Z).
 
 # Block transitive deps from exotic sources (git/URL); only registry, workspace,
 # or local. pnpm 11 default is true; set explicitly so intent survives default
