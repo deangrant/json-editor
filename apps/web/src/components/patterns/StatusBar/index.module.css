@@ -1,0 +1,25 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: var(--statusbar-height);
+  padding: 0 var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+  background: rgb(255 255 255 / 65%);
+  border-top: 1px solid var(--color-border);
+}
+
+.item {
+  white-space: nowrap;
+}
+
+.warning {
+  color: var(--color-warning);
+}
+
+.busy {
+  color: var(--color-accent);
+}

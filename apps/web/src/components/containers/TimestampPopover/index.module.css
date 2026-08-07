@@ -1,0 +1,20 @@
+.wrap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  max-width: 18rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+}
+
+.input {
+  min-width: 11rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}

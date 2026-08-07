@@ -1,0 +1,37 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item {
+  padding: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+  text-align: left;
+  cursor: pointer;
+  background: var(--color-danger-soft);
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.item:hover {
+  filter: brightness(0.98);
+}
+
+.source {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+  text-transform: uppercase;
+}
+
+.empty {
+  font-size: 0.8125rem;
+  color: var(--color-ink-muted);
+}
