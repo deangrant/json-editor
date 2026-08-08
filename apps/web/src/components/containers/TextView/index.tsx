@@ -39,7 +39,7 @@ export function TextView() {
 
     const mount = async () => {
       const [
-        { defaultKeymap, history, historyKeymap },
+        { defaultKeymap },
         { json },
         { bracketMatching, foldGutter, foldKeymap },
         { highlightSelectionMatches, searchKeymap },
@@ -77,14 +77,8 @@ export function TextView() {
             drawSelection(),
             bracketMatching(),
             highlightSelectionMatches(),
-            history(),
             json(),
-            keymap.of([
-              ...defaultKeymap,
-              ...historyKeymap,
-              ...searchKeymap,
-              ...foldKeymap,
-            ]),
+            keymap.of([...defaultKeymap, ...searchKeymap, ...foldKeymap]),
             EditorView.updateListener.of((update) => {
               if (update.docChanged && !applyingExternalChangeRef.current) {
                 setTextRef.current(update.state.doc.toString());

@@ -1,17 +1,13 @@
 import { LARGE_DOCUMENT_BYTES } from "@json-editor/core/constants.js";
 import { JsonFormatter } from "@json-editor/core/format/json-formatter.js";
 import { HistoryStack } from "@json-editor/core/history/history-stack.js";
-import { JsonParser } from "@json-editor/core/parse/json-parser.js";
 import type { TransformProgram } from "@json-editor/core/query/transform.types.js";
 import { TransformEngine } from "@json-editor/core/query/transform-engine.js";
 import type {
   JsonPath,
   JsonValue,
-  ParseError,
-  ValidationIssue,
 } from "@json-editor/core/types/json.types.js";
 import { CompositeValidator } from "@json-editor/core/validate/composite-validator.js";
-import type { WorkerResponse } from "@json-editor/core/worker/protocol.js";
 import {
   useCallback,
   useEffect,
@@ -35,9 +31,14 @@ import type {
 } from "../types/document.types.js";
 import { createBannedFlagValidator } from "../utils/custom-validators.js";
 import { runPromise } from "../utils/run-promise.js";
+import {
+  outcomeFromLocalParse,
+  outcomeFromWorkerParseResponse,
+  type ParseOutcome,
+} from "./document-controller/parse-outcomes.js";
+import { collectSchemaIssues } from "./document-controller/schema-validation.js";
 
 const formatter = new JsonFormatter();
-const parser = new JsonParser();
 const transformEngine = new TransformEngine();
 
 /** Debounce window for streaming text edits before worker parse. */
@@ -45,144 +46,6 @@ const PARSE_DEBOUNCE_MS = 100;
 
 /** Coalesce window for rapid history snapshots (typing / table edits). */
 const HISTORY_COALESCE_MS = 500;
-
-/** Outcome of a document text parse attempt. */
-interface ParseOutcome {
-  readonly json: JsonValue | undefined;
-  readonly parseError: ParseError | undefined;
-}
-
-/**
- * Maps a worker parse response into a document parse outcome.
- * @param response Worker response for a parse job.
- * @returns Parsed value or parse error fields for the reducer.
- */
-function outcomeFromWorkerParseResponse(
-  response: WorkerResponse,
-): ParseOutcome {
-  if (response.ok && response.result.type === "parse") {
-    return { json: response.result.value, parseError: undefined };
-  }
-  if (!response.ok) {
-    const { parseError } = response;
-    return { json: undefined, parseError };
-  }
-  return { json: undefined, parseError: undefined };
-}
-
-/**
- * Parses text on the main thread when no worker is available.
- * @param text Document text to parse.
- * @returns Parsed value or parse error fields for the reducer.
- */
-function outcomeFromLocalParse(text: string): ParseOutcome {
-  const parsed = parser.parse(text);
-  if (parsed.ok) {
-    return { json: parsed.value, parseError: undefined };
-  }
-  const { error: parseError } = parsed;
-  return { json: undefined, parseError };
-}
-
-/**
- * Builds a validation issue for schema text that is not JSON.
- * @param message Parser error message.
- * @returns Schema-sourced validation issue.
- */
-function schemaJsonErrorIssue(message: string): ValidationIssue {
-  return {
-    message: `Schema is not valid JSON: ${message}`,
-    path: [],
-    severity: "error",
-    source: "schema",
-  };
-}
-
-/**
- * Maps a worker validate response to schema issues.
- * @param response Worker response for a validate job.
- * @returns Schema validation issues, or a failure issue.
- */
-function schemaIssuesFromWorkerResponse(
-  response: WorkerResponse,
-): ValidationIssue[] {
-  if (response.ok && response.result.type === "validate") {
-    return response.result.issues;
-  }
-  if (!response.ok) {
-    return [
-      {
-        message: `Schema validation failed: ${response.error}`,
-        path: [],
-        severity: "error",
-        source: "schema",
-      },
-    ];
-  }
-  return [];
-}
-
-/** Result of collecting schema issues for a document value. */
-type SchemaIssueCollection =
-  | { readonly kind: "invalidSchema"; readonly issues: ValidationIssue[] }
-  | { readonly kind: "issues"; readonly issues: ValidationIssue[] };
-
-/**
- * Parses schema text and optionally validates `json` via the worker.
- * @param json Document value to validate.
- * @param schemaText Trimmed schema JSON text.
- * @param worker Optional worker client.
- * @returns Invalid-schema terminal issues, or collected schema issues.
- */
-/** Maximum schema text size accepted for validation jobs. */
-const MAX_SCHEMA_TEXT_BYTES = 256 * 1024;
-
-async function collectSchemaIssues(
-  json: JsonValue,
-  schemaText: string,
-  worker: WorkerClient | undefined,
-): Promise<SchemaIssueCollection> {
-  if (schemaText.length === 0) {
-    return { issues: [], kind: "issues" };
-  }
-
-  const schemaBytes = new TextEncoder().encode(schemaText).byteLength;
-  if (schemaBytes > MAX_SCHEMA_TEXT_BYTES) {
-    return {
-      issues: [
-        {
-          message: "Schema is too large to validate (max 256 KiB).",
-          path: [],
-          severity: "error",
-          source: "schema",
-        },
-      ],
-      kind: "invalidSchema",
-    };
-  }
-
-  const schemaParsed = parser.parse(schemaText);
-  if (!schemaParsed.ok) {
-    return {
-      issues: [schemaJsonErrorIssue(schemaParsed.error.message)],
-      kind: "invalidSchema",
-    };
-  }
-
-  if (!worker) {
-    return { issues: [], kind: "issues" };
-  }
-
-  const response = await worker.run({
-    schema: schemaParsed.value as object,
-    type: "validate",
-    value: json,
-  });
-  return {
-    issues: schemaIssuesFromWorkerResponse(response),
-    kind: "issues",
-  };
-}
 
 /**
  * Owns document state, history, worker jobs, and editor actions.
