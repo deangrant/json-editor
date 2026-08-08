@@ -43,6 +43,9 @@ const transformEngine = new TransformEngine();
 /** Debounce window for streaming text edits before worker parse. */
 const PARSE_DEBOUNCE_MS = 100;
 
+/** Coalesce window for rapid history snapshots (typing / table edits). */
+const HISTORY_COALESCE_MS = 500;
+
 /** Outcome of a document text parse attempt. */
 interface ParseOutcome {
   readonly json: JsonValue | undefined;
@@ -102,6 +105,7 @@ export function useDocumentController(): DocumentContextValue {
     undefined,
   );
   const parseBusyOwnerRef = useRef<number | undefined>(undefined);
+  const lastHistoryPushAtRef = useRef(0);
   const [historyVersion, setHistoryVersion] = useState(0);
 
   useEffect(() => {
@@ -116,8 +120,32 @@ export function useDocumentController(): DocumentContextValue {
   }, []);
 
   const pushHistory = useCallback(
-    (text: string, json: JsonValue | undefined) => {
-      historyRef.current?.push({ json, text });
+    (
+      text: string,
+      json: JsonValue | undefined,
+      options?: { readonly force?: boolean },
+    ) => {
+      const history = historyRef.current;
+      if (!history) {
+        return;
+      }
+      const current = history.current();
+      if (current?.text === text) {
+        return;
+      }
+
+      const now = Date.now();
+      const force = options?.force === true;
+      if (
+        !force &&
+        current !== undefined &&
+        now - lastHistoryPushAtRef.current < HISTORY_COALESCE_MS
+      ) {
+        history.replacePresent({ json, text });
+      } else {
+        history.push({ json, text });
+      }
+      lastHistoryPushAtRef.current = now;
       setHistoryVersion((version) => version + 1);
     },
     [],
@@ -132,7 +160,7 @@ export function useDocumentController(): DocumentContextValue {
   }, []);
 
   const runParse = useCallback(
-    async (text: string, generation: number) => {
+    async (text: string, generation: number, forceHistory = false) => {
       const bytes = new TextEncoder().encode(text).byteLength;
       const showBusy = bytes >= LARGE_DOCUMENT_BYTES;
       if (showBusy) {
@@ -163,7 +191,7 @@ export function useDocumentController(): DocumentContextValue {
           text,
           type: "applyParseResult",
         });
-        pushHistory(text, json);
+        pushHistory(text, json, { force: forceHistory });
       } finally {
         if (parseBusyOwnerRef.current === generation) {
           parseBusyOwnerRef.current = undefined;
@@ -197,7 +225,7 @@ export function useDocumentController(): DocumentContextValue {
         clearTimeout(parseTimerRef.current);
         parseTimerRef.current = undefined;
       }
-      return runParse(text, generation);
+      return runParse(text, generation, true);
     },
     [runParse],
   );
@@ -251,6 +279,7 @@ export function useDocumentController(): DocumentContextValue {
     }
     dispatch({ fileName: file.fileName, text: file.text, type: "load" });
     historyRef.current?.clear();
+    lastHistoryPushAtRef.current = 0;
     await parseNow(file.text);
   }, [parseNow]);
 
@@ -273,7 +302,7 @@ export function useDocumentController(): DocumentContextValue {
               ? formatter.compact(state.json)
               : formatter.beautify(state.json);
           dispatch({ json: state.json, text, type: "setJson" });
-          pushHistory(text, state.json);
+          pushHistory(text, state.json, { force: true });
           return;
         }
         const response = await worker.run({
@@ -291,7 +320,7 @@ export function useDocumentController(): DocumentContextValue {
             text: response.result.text,
             type: "setJson",
           });
-          pushHistory(response.result.text, state.json);
+          pushHistory(response.result.text, state.json, { force: true });
         }
       } finally {
         dispatch({ busy: false, type: "setWorkerBusy" });

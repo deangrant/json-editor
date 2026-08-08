@@ -27,6 +27,12 @@ export interface IHistoryStack<T> {
   redo: () => T | undefined;
 
   /**
+   * Replaces the current snapshot without affecting undo/redo branches.
+   * @param snapshot Document snapshot to store as present.
+   */
+  replacePresent: (snapshot: T) => void;
+
+  /**
    * Moves one step backward.
    * @returns Previous snapshot, or `undefined` if none.
    */

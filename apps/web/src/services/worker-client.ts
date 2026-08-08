@@ -4,16 +4,20 @@ import type {
   WorkerResponse,
 } from "@json-editor/core/worker/protocol.js";
 
+/** Rejects stuck worker jobs so UI busy flags can clear. */
+const JOB_TIMEOUT_MS = 30_000;
+
 interface Pending {
   reject: (error: Error) => void;
   resolve: (response: WorkerResponse) => void;
+  timeoutId: ReturnType<typeof setTimeout>;
 }
 
 /**
  * Thin client around the JSON web worker.
  */
 export class WorkerClient {
-  private readonly worker: Worker;
+  private worker: Worker | undefined;
   private readonly pending = new Map<string, Pending>();
   private sequence = 0;
 
@@ -33,14 +37,12 @@ export class WorkerClient {
           return;
         }
         this.pending.delete(response.id);
+        clearTimeout(entry.timeoutId);
         entry.resolve(response);
       },
     );
     this.worker.addEventListener("error", (event) => {
-      for (const [, entry] of this.pending) {
-        entry.reject(new Error(event.message || "Worker failed."));
-      }
-      this.pending.clear();
+      this.rejectAll(new Error(event.message || "Worker failed."));
     });
   }
 
@@ -50,19 +52,61 @@ export class WorkerClient {
    * @returns Worker response.
    */
   run(job: WorkerJob): Promise<WorkerResponse> {
+    const { worker } = this;
+    if (!worker) {
+      return Promise.reject(new Error("Worker disposed."));
+    }
+
     this.sequence += 1;
     const id = `job-${this.sequence}`;
     const request: WorkerRequest = { id, job };
 
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { reject, resolve });
-      this.worker.postMessage(request);
+      const timeoutId = setTimeout(() => {
+        if (!this.pending.has(id)) {
+          return;
+        }
+        this.pending.delete(id);
+        reject(new Error("Worker job timed out."));
+      }, JOB_TIMEOUT_MS);
+
+      this.pending.set(id, {
+        reject: (error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        },
+        resolve: (response) => {
+          clearTimeout(timeoutId);
+          resolve(response);
+        },
+        timeoutId,
+      });
+      worker.postMessage(request);
     });
   }
 
-  /** Terminates the worker. */
+  /**
+   * Terminates the worker and rejects any in-flight jobs.
+   */
   dispose(): void {
-    this.worker.terminate();
+    const { worker } = this;
+    if (!worker) {
+      return;
+    }
+    this.worker = undefined;
+    this.rejectAll(new Error("Worker disposed."));
+    worker.terminate();
+  }
+
+  /**
+   * Rejects and clears all pending jobs.
+   * @param error Rejection error for waiters.
+   */
+  private rejectAll(error: Error): void {
+    for (const entry of this.pending.values()) {
+      clearTimeout(entry.timeoutId);
+      entry.reject(error);
+    }
     this.pending.clear();
   }
 }

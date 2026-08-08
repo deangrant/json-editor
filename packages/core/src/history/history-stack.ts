@@ -11,7 +11,7 @@ export class HistoryStack<T> implements IHistoryStack<T> {
   private readonly maxDepth: number;
 
   /**
-   * @param maxDepth Maximum number of past entries retained.
+   * @param maxDepth Maximum number of past and future entries retained.
    */
   constructor(maxDepth = 100) {
     this.maxDepth = maxDepth;
@@ -34,12 +34,18 @@ export class HistoryStack<T> implements IHistoryStack<T> {
   push(snapshot: T): void {
     if (this.present !== undefined) {
       this.past.push(this.present);
-      if (this.past.length > this.maxDepth) {
-        this.past.shift();
-      }
+      this.trimPast();
     }
     this.present = snapshot;
     this.future = [];
+  }
+
+  /**
+   * Replaces the current snapshot without affecting undo/redo branches.
+   * @param snapshot Document snapshot to store as present.
+   */
+  replacePresent(snapshot: T): void {
+    this.present = snapshot;
   }
 
   /**
@@ -51,6 +57,7 @@ export class HistoryStack<T> implements IHistoryStack<T> {
       return;
     }
     this.future.unshift(this.present);
+    this.trimFuture();
     this.present = this.past.pop();
     return this.present;
   }
@@ -65,6 +72,7 @@ export class HistoryStack<T> implements IHistoryStack<T> {
     }
     if (this.present !== undefined) {
       this.past.push(this.present);
+      this.trimPast();
     }
     this.present = this.future.shift();
     return this.present;
@@ -80,5 +88,19 @@ export class HistoryStack<T> implements IHistoryStack<T> {
     this.past = [];
     this.present = undefined;
     this.future = [];
+  }
+
+  /** Drops oldest past entries when over max depth. */
+  private trimPast(): void {
+    while (this.past.length > this.maxDepth) {
+      this.past.shift();
+    }
+  }
+
+  /** Drops farthest future entries when over max depth. */
+  private trimFuture(): void {
+    while (this.future.length > this.maxDepth) {
+      this.future.pop();
+    }
   }
 }
