@@ -1,0 +1,16 @@
+---
+description: Monorepo conventions for json-editor (pnpm, tests, layers, imports, controller)
+alwaysApply: true
+---
+
+# json-editor conventions
+
+- Workspace: `apps/web` (`@json-editor/web`) + `packages/core` (`@json-editor/core`). Use `pnpm`, `catalog:` versions, and frozen lockfile installs.
+- Prefer colocated Vitest unit tests and small pure helper extracts. Do **not** add `@testing-library/react` unless the user asks.
+- Keep established kebab-case filenames (`use-document.ts`, `worker-client.ts`). Do not mass-rename for structure-skill PascalCase.
+- UI layers: `components/core`, `patterns`, `containers`, `layouts`. Leaf popovers belong in `patterns`.
+- Keep layer `index.ts` barrels as a public API surface, but **app code must import direct module paths** (React Doctor `no-barrel-import`).
+- Document controller: inject `DocumentControllerDeps`; UI consumes narrow `useDocument*` role hooks, not a fat context by default.
+- Do not write `ref.current` during render. Prefer lazy `useState` for one-time history (or similar) initialization.
+- Do not scaffold empty `assets/`, `routes/`, or `i18n/` for this single-page app.
+- Before merge: `/verify` or `pnpm verify`. After React edits: `/doctor` or `pnpm run doctor:changed`.

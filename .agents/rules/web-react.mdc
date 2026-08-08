@@ -1,0 +1,18 @@
+---
+description: React web app structure and skills for apps/web
+globs: apps/web/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# apps/web React
+
+- Place UI by role: `core` (leaf), `patterns` (composed controls), `containers` (feature blocks), `layouts` (page shells).
+- Folder-per-component: `index.tsx`, `index.module.css`, `index.types.ts` when props/types exist.
+- Prefer CSS Modules; match existing visual tokens and spacing.
+- Import components via direct paths (e.g. `../../core/Button/index.js`), not layer barrels.
+- Apply skills when relevant:
+  - `.agents/skills/typescript-project-structure`
+  - `.agents/skills/solid-typescript-design`
+  - `.agents/skills/jsdoc-typescript-docs`
+  - `.agents/skills/react-doctor`
+  - `.agents/skills/vitest-web-testing`

@@ -1,0 +1,13 @@
+---
+description: Domain-core package conventions for packages/core
+globs: packages/core/src/**/*.ts
+alwaysApply: false
+---
+
+# packages/core
+
+- Keep the package pure domain logic (parse, format, repair, validate, transform, history, path). No React.
+- Prefer `I*` interfaces with concrete adapters (`JsonParser`, `SchemaValidator`, `HistoryStack`, etc.).
+- Document exported types, interfaces, and classes with JSDoc; document public properties when they add meaning.
+- Follow `.agents/skills/jsdoc-typescript-docs` and `.agents/skills/solid-typescript-design`.
+- Colocate unit tests as `*.test.ts` next to the module under test.

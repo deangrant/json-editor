@@ -67,7 +67,7 @@ run_scan() {
   wait "$killer_pid" 2>/dev/null
 }
 
-LOCK_FILE="${TMPDIR:-/tmp}/geogentia-www-react-doctor-hook.lock"
+LOCK_FILE="${TMPDIR:-/tmp}/json-editor-react-doctor-hook.lock"
 
 if command -v flock >/dev/null 2>&1; then
   # flock is atomic and auto-releases on exit: no stale locks, no pid/token.

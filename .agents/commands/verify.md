@@ -4,6 +4,14 @@ Run the same checks as the CI Lint and Dependency Audit workflows (Biome,
 lockfile, React Doctor, and `pnpm audit`) plus typecheck and
 the test suite before merge or PR sign-off.
 
+Prefer the root script when available:
+
+```bash
+pnpm verify
+```
+
+That runs Biome CI, typecheck, tests, lockfile validation, and audit in order.
+
 ## Steps
 
 From repository root, run in order. All must exit zero.
@@ -15,6 +23,8 @@ pnpm test
 pnpm lint:lockfile
 pnpm audit
 ```
+
+(`pnpm verify` is equivalent to the sequence above.)
 
 ## Optional
 

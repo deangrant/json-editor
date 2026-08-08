@@ -34,7 +34,8 @@
     "lint:fix": "biome lint --write .",
     "lint:lockfile": "pnpm install --frozen-lockfile",
     "test": "pnpm -r --if-present run test",
-    "typecheck": "pnpm -r --if-present run typecheck"
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "verify": "pnpm exec biome ci . && pnpm run typecheck && pnpm test && pnpm lint:lockfile && pnpm audit"
   },
   "type": "module",
   "version": "1.0.0"
