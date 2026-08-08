@@ -1,5 +1,10 @@
 import { detectValue } from "@json-editor/core/detect/value-detect.js";
-import { getAtPath, setAtPath } from "@json-editor/core/path/json-path.js";
+import {
+  deleteAtPath,
+  getAtPath,
+  renameKey,
+  setAtPath,
+} from "@json-editor/core/path/json-path.js";
 import type {
   JsonPath,
   JsonValue,
@@ -44,6 +49,10 @@ export function TreeView() {
   const [viewportHeight, setViewportHeight] = useState(480);
   const [editingPath, setEditingPath] = useState<string | undefined>();
   const [draft, setDraft] = useState("");
+  const [editingKeyPath, setEditingKeyPath] = useState<string | undefined>();
+  const [keyDraft, setKeyDraft] = useState("");
+  const [addingPath, setAddingPath] = useState<string | undefined>();
+  const [addKeyDraft, setAddKeyDraft] = useState("");
 
   const rows = useMemo(() => {
     if (state.json === undefined) {
@@ -83,6 +92,18 @@ export function TreeView() {
     [viewportHeight],
   );
 
+  const expandPath = useCallback((path: JsonPath) => {
+    const key = pathKeyOf(path);
+    setExpanded((current) => {
+      if (current.has(key)) {
+        return current;
+      }
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
   const toggle = useCallback((path: JsonPath) => {
     const key = pathKeyOf(path);
     setExpanded((current) => {
@@ -118,6 +139,123 @@ export function TreeView() {
     [setJson, state.json],
   );
 
+  const deleteNode = useCallback(
+    (path: JsonPath) => {
+      if (state.json === undefined || path.length === 0) {
+        return;
+      }
+      setJson(deleteAtPath(state.json, path));
+      setSelection(path.slice(0, -1));
+      setEditingKeyPath(undefined);
+      setAddingPath(undefined);
+    },
+    [setJson, setSelection, state.json],
+  );
+
+  const startRename = useCallback(
+    (path: JsonPath) => {
+      const segment = path.at(-1);
+      if (typeof segment !== "string") {
+        return;
+      }
+      setSelection(path);
+      setEditingKeyPath(pathKeyOf(path));
+      setKeyDraft(segment);
+      setAddingPath(undefined);
+      setEditingPath(undefined);
+    },
+    [setSelection],
+  );
+
+  const cancelRename = useCallback(() => {
+    setEditingKeyPath(undefined);
+  }, []);
+
+  const commitRename = useCallback(
+    (path: JsonPath) => {
+      if (state.json === undefined || path.length === 0) {
+        return;
+      }
+      const fromKey = path.at(-1);
+      if (typeof fromKey !== "string") {
+        return;
+      }
+      const toKey = keyDraft.trim();
+      if (!toKey || toKey === fromKey) {
+        setEditingKeyPath(undefined);
+        return;
+      }
+      try {
+        const parentPath = path.slice(0, -1);
+        setJson(renameKey(state.json, parentPath, fromKey, toKey));
+        setSelection([...parentPath, toKey]);
+        setEditingKeyPath(undefined);
+      } catch {
+        // Keep the draft when the target key already exists.
+      }
+    },
+    [keyDraft, setJson, setSelection, state.json],
+  );
+
+  const startAdd = useCallback(
+    (path: JsonPath) => {
+      if (state.json === undefined) {
+        return;
+      }
+      const value = getAtPath(state.json, path);
+      if (Array.isArray(value)) {
+        const nextPath = [...path, value.length] as JsonPath;
+        setJson(setAtPath(state.json, nextPath, null));
+        expandPath(path);
+        setSelection(nextPath);
+        setAddingPath(undefined);
+        setEditingKeyPath(undefined);
+        return;
+      }
+      if (value !== null && typeof value === "object") {
+        setSelection(path);
+        setAddingPath(pathKeyOf(path));
+        setAddKeyDraft("");
+        setEditingKeyPath(undefined);
+        setEditingPath(undefined);
+        expandPath(path);
+      }
+    },
+    [expandPath, setJson, setSelection, state.json],
+  );
+
+  const cancelAdd = useCallback(() => {
+    setAddingPath(undefined);
+  }, []);
+
+  const commitAddKey = useCallback(
+    (path: JsonPath) => {
+      if (state.json === undefined) {
+        return;
+      }
+      const key = addKeyDraft.trim();
+      if (!key) {
+        setAddingPath(undefined);
+        return;
+      }
+      const parent = getAtPath(state.json, path);
+      if (
+        parent === null ||
+        typeof parent !== "object" ||
+        Array.isArray(parent) ||
+        key in parent
+      ) {
+        return;
+      }
+      const nextPath = [...path, key] as JsonPath;
+      setJson(setAtPath(state.json, nextPath, null));
+      expandPath(path);
+      setSelection(nextPath);
+      setAddingPath(undefined);
+    },
+    [addKeyDraft, expandPath, setJson, setSelection, state.json],
+  );
+
   if (state.json === undefined) {
     return (
       <div className={styles.empty}>
@@ -142,13 +280,26 @@ export function TreeView() {
         <div style={{ transform: `translateY(${window.offsetY}px)` }}>
           {visible.map((row) => (
             <TreeRowItem
+              addingPath={addingPath}
+              addKeyDraft={addKeyDraft}
               draft={draft}
+              editingKeyPath={editingKeyPath}
               editingPath={editingPath}
               key={pathKeyOf(row.path) || "root"}
+              keyDraft={keyDraft}
+              onAdd={startAdd}
+              onAddKeyDraftChange={setAddKeyDraft}
+              onCancelAdd={cancelAdd}
+              onCancelRename={cancelRename}
+              onCommitAddKey={commitAddKey}
               onCommitEdit={commitEdit}
+              onCommitRename={commitRename}
+              onDelete={deleteNode}
               onDraftChange={setDraft}
               onEdit={setEditingPath}
+              onKeyDraftChange={setKeyDraft}
               onSelect={setSelection}
+              onStartRename={startRename}
               onToggle={toggle}
               onUpdateValue={updateValue}
               row={row}
@@ -162,12 +313,25 @@ export function TreeView() {
 }
 
 interface TreeRowItemProps {
+  readonly addingPath: string | undefined;
+  readonly addKeyDraft: string;
   readonly draft: string;
+  readonly editingKeyPath: string | undefined;
   readonly editingPath: string | undefined;
+  readonly keyDraft: string;
+  readonly onAdd: (path: JsonPath) => void;
+  readonly onAddKeyDraftChange: (value: string) => void;
+  readonly onCancelAdd: () => void;
+  readonly onCancelRename: () => void;
+  readonly onCommitAddKey: (path: JsonPath) => void;
   readonly onCommitEdit: (path: JsonPath) => void;
+  readonly onCommitRename: (path: JsonPath) => void;
+  readonly onDelete: (path: JsonPath) => void;
   readonly onDraftChange: (value: string) => void;
   readonly onEdit: (pathKey: string | undefined) => void;
+  readonly onKeyDraftChange: (value: string) => void;
   readonly onSelect: (path: JsonPath) => void;
+  readonly onStartRename: (path: JsonPath) => void;
   readonly onToggle: (path: JsonPath) => void;
   readonly onUpdateValue: (path: JsonPath, value: JsonValue) => void;
   readonly row: TreeRow;
@@ -184,18 +348,40 @@ function TreeRowItem({
   selectedKey,
   editingPath,
   draft,
+  editingKeyPath,
+  keyDraft,
+  addingPath,
+  addKeyDraft,
   onToggle,
   onSelect,
   onCommitEdit,
   onDraftChange,
   onEdit,
   onUpdateValue,
+  onDelete,
+  onStartRename,
+  onCommitRename,
+  onCancelRename,
+  onKeyDraftChange,
+  onAdd,
+  onCommitAddKey,
+  onCancelAdd,
+  onAddKeyDraftChange,
 }: TreeRowItemProps) {
   const key = pathKeyOf(row.path);
   const detection = detectValue(row.value);
   const isEditing = editingPath === key;
+  const isRenaming = editingKeyPath === key;
+  const isAdding = addingPath === key;
   const leaf = !row.expandable;
   const selected = selectedKey === key;
+  const canDelete = row.path.length > 0;
+  const canRename = typeof row.key === "string";
+  const canAdd =
+    Array.isArray(row.value) ||
+    (row.value !== null &&
+      typeof row.value === "object" &&
+      !Array.isArray(row.value));
 
   const handleToggle = useCallback(() => {
     onToggle(row.path);
@@ -227,6 +413,26 @@ function TreeRowItem({
     [onUpdateValue, row.path],
   );
 
+  const handleDelete = useCallback(() => {
+    onDelete(row.path);
+  }, [onDelete, row.path]);
+
+  const handleStartRename = useCallback(() => {
+    onStartRename(row.path);
+  }, [onStartRename, row.path]);
+
+  const handleCommitRename = useCallback(() => {
+    onCommitRename(row.path);
+  }, [onCommitRename, row.path]);
+
+  const handleAdd = useCallback(() => {
+    onAdd(row.path);
+  }, [onAdd, row.path]);
+
+  const handleCommitAddKey = useCallback(() => {
+    onCommitAddKey(row.path);
+  }, [onCommitAddKey, row.path]);
+
   return (
     <div
       aria-expanded={row.expandable ? row.expanded : undefined}
@@ -240,15 +446,22 @@ function TreeRowItem({
         height: ROW_HEIGHT,
         paddingLeft: `${0.75 + row.depth * 1.1}rem`,
       }}
+      tabIndex={selected ? 0 : -1}
     >
       <TreeToggle
         expandable={row.expandable}
         expanded={row.expanded}
         onToggle={handleToggle}
       />
-      <button className={styles.key} onClick={handleSelect} type="button">
-        {row.key === undefined ? "$" : `${String(row.key)}:`}
-      </button>
+      <TreeKey
+        isRenaming={isRenaming}
+        keyDraft={keyDraft}
+        onCancelRename={onCancelRename}
+        onCommitRename={handleCommitRename}
+        onKeyDraftChange={onKeyDraftChange}
+        onSelect={handleSelect}
+        row={row}
+      />
       <div className={styles.value}>
         <TreeValue
           draft={draft}
@@ -259,6 +472,23 @@ function TreeRowItem({
           onStopEdit={handleStopEdit}
           row={row}
         />
+        {selected ? (
+          <TreeStructuralActions
+            {...(canAdd ? { add: handleAdd } : {})}
+            {...(canDelete ? { remove: handleDelete } : {})}
+            {...(canRename ? { rename: handleStartRename } : {})}
+            {...(isAdding
+              ? {
+                  adding: {
+                    draft: addKeyDraft,
+                    onCancel: onCancelAdd,
+                    onCommit: handleCommitAddKey,
+                    onDraftChange: onAddKeyDraftChange,
+                  },
+                }
+              : {})}
+          />
+        ) : null}
         {leaf && selected ? (
           <TreeHelpers
             detection={detection}
@@ -296,6 +526,163 @@ function TreeToggle({
     >
       {expanded ? "▾" : "▸"}
     </button>
+  );
+}
+
+/**
+ * Key label or inline rename editor for a tree row.
+ * @param props Key props.
+ * @returns Key control.
+ */
+function TreeKey({
+  row,
+  isRenaming,
+  keyDraft,
+  onSelect,
+  onKeyDraftChange,
+  onCommitRename,
+  onCancelRename,
+}: {
+  row: TreeRow;
+  isRenaming: boolean;
+  keyDraft: string;
+  onSelect: () => void;
+  onKeyDraftChange: (value: string) => void;
+  onCommitRename: () => void;
+  onCancelRename: () => void;
+}) {
+  const handleDraftChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      onKeyDraftChange(event.target.value);
+    },
+    [onKeyDraftChange],
+  );
+
+  const handleClick = useCallback((event: MouseEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        onCommitRename();
+      }
+      if (event.key === "Escape") {
+        onCancelRename();
+      }
+    },
+    [onCancelRename, onCommitRename],
+  );
+
+  const handleEditRef = useCallback((node: HTMLInputElement | null) => {
+    node?.focus();
+  }, []);
+
+  if (isRenaming) {
+    return (
+      <input
+        aria-label="Rename key"
+        className={styles.keyEdit}
+        onBlur={onCommitRename}
+        onChange={handleDraftChange}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        ref={handleEditRef}
+        value={keyDraft}
+      />
+    );
+  }
+
+  return (
+    <button className={styles.key} onClick={onSelect} type="button">
+      {row.key === undefined ? "$" : `${String(row.key)}:`}
+    </button>
+  );
+}
+
+/**
+ * Structural Add / Rename / Delete controls for the selected row.
+ * @param props Action props. Optional handlers/slots enable each action.
+ * @returns Action controls.
+ */
+function TreeStructuralActions({
+  add,
+  rename,
+  remove,
+  adding,
+}: {
+  add?: () => void;
+  rename?: () => void;
+  remove?: () => void;
+  adding?: {
+    draft: string;
+    onCancel: () => void;
+    onCommit: () => void;
+    onDraftChange: (value: string) => void;
+  };
+}) {
+  const handleAddKeyDraftChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      adding?.onDraftChange(event.target.value);
+    },
+    [adding],
+  );
+
+  const handleClick = useCallback((event: MouseEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        adding?.onCommit();
+      }
+      if (event.key === "Escape") {
+        adding?.onCancel();
+      }
+    },
+    [adding],
+  );
+
+  const handleEditRef = useCallback((node: HTMLInputElement | null) => {
+    node?.focus();
+  }, []);
+
+  if (!(add || rename || remove || adding)) {
+    return null;
+  }
+
+  return (
+    <div className={styles.helpers}>
+      {add ? (
+        <button className={styles.action} onClick={add} type="button">
+          Add
+        </button>
+      ) : null}
+      {rename ? (
+        <button className={styles.action} onClick={rename} type="button">
+          Rename
+        </button>
+      ) : null}
+      {remove ? (
+        <button className={styles.action} onClick={remove} type="button">
+          Delete
+        </button>
+      ) : null}
+      {adding ? (
+        <input
+          aria-label="New property key"
+          className={styles.keyEdit}
+          onBlur={adding.onCommit}
+          onChange={handleAddKeyDraftChange}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          placeholder="new key"
+          ref={handleEditRef}
+          value={adding.draft}
+        />
+      ) : null}
+    </div>
   );
 }
 

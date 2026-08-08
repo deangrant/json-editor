@@ -400,6 +400,7 @@ export function useDocumentController(): DocumentContextValue {
     dispatch({ fileName: file.fileName, text: file.text, type: "load" });
     historyRef.current?.clear();
     lastHistoryPushAtRef.current = 0;
+    setHistoryVersion((version) => version + 1);
     await parseNow(file.text);
   }, [parseNow]);
 
@@ -630,11 +631,17 @@ export function useDocumentController(): DocumentContextValue {
     [setText, state.mode, state.text],
   );
 
-  // historyVersion triggers re-render so undo/redo flags stay current.
-  const canUndo =
-    historyVersion >= 0 && (historyRef.current?.canUndo() ?? false);
-  const canRedo =
-    historyVersion >= 0 && (historyRef.current?.canRedo() ?? false);
+  // Include historyVersion so state bumps refresh ref-backed undo/redo flags.
+  const historyFlags = {
+    canRedo: historyRef.current?.canRedo() ?? false,
+    canUndo: historyRef.current?.canUndo() ?? false,
+    historyVersion,
+  } satisfies {
+    canRedo: boolean;
+    canUndo: boolean;
+    historyVersion: number;
+  };
+  const { canUndo, canRedo } = historyFlags;
 
   return useMemo<DocumentContextValue>(
     () => ({

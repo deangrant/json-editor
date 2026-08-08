@@ -17,14 +17,6 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-/**
- * Editor content as either parsed JSON or raw text.
- * Exactly one of `json` or `text` is the source of truth at a time.
- */
-export type DocumentContent =
-  | { readonly json: JsonValue; readonly text?: undefined }
-  | { readonly text: string; readonly json?: undefined };
-
 /** Parse failure details for invalid JSON text. */
 export interface ParseError {
   readonly message: string;

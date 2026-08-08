@@ -9,9 +9,10 @@
     "vitest": "catalog:"
   },
   "exports": {
-    "./*": {
-      "import": "./dist/*",
-      "types": "./dist/*"
+    "./*.js": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
     }
   },
   "name": "@json-editor/core",

@@ -38,6 +38,7 @@ export function TransformPanel() {
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [pickFields, setPickFields] = useState("id,name,active");
+  const [mapRenames, setMapRenames] = useState("");
   const [limit, setLimit] = useState("50");
 
   const program = useMemo((): TransformProgram => {
@@ -66,6 +67,10 @@ export function TransformPanel() {
     if (fields.length > 0) {
       ops.push({ fields, type: "pick" });
     }
+    const renames = parseMapRenames(mapRenames);
+    if (renames.length > 0) {
+      ops.push({ renames, type: "map" });
+    }
     const count = Number.parseInt(limit, 10);
     if (!Number.isNaN(count)) {
       ops.push({ count, type: "limit" });
@@ -84,6 +89,7 @@ export function TransformPanel() {
     filterOperator,
     filterValue,
     limit,
+    mapRenames,
     pickFields,
     rootPathText,
     sortDirection,
@@ -139,6 +145,13 @@ export function TransformPanel() {
     [],
   );
 
+  const handleMapRenamesChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setMapRenames(event.target.value);
+    },
+    [],
+  );
+
   const handleLimitChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       setLimit(event.target.value);
@@ -158,7 +171,7 @@ export function TransformPanel() {
     <aside className={styles.panel}>
       <h2 className={styles.title}>Transform</h2>
       <p className={styles.help}>
-        Built-in filter → sort → pick → limit pipeline on an array path.
+        Built-in filter → sort → pick → map → limit pipeline on an array path.
       </p>
       <div className={styles.grid}>
         <Input
@@ -201,6 +214,11 @@ export function TransformPanel() {
           onChange={handlePickFieldsChange}
           value={pickFields}
         />
+        <Input
+          label="Map renames (from:to, …)"
+          onChange={handleMapRenamesChange}
+          value={mapRenames}
+        />
         <Input label="Limit" onChange={handleLimitChange} value={limit} />
       </div>
       <div className={styles.actions}>
@@ -233,4 +251,30 @@ function parseFilterValue(text: string) {
   } catch {
     return text;
   }
+}
+
+/**
+ * Parses comma-separated `from:to` rename pairs, skipping malformed entries.
+ * @param text Raw form text.
+ * @returns Valid rename pairs.
+ */
+function parseMapRenames(
+  text: string,
+): { readonly from: string; readonly to: string }[] {
+  return text
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part) => {
+      const separator = part.indexOf(":");
+      if (separator <= 0 || separator === part.length - 1) {
+        return [];
+      }
+      const from = part.slice(0, separator).trim();
+      const to = part.slice(separator + 1).trim();
+      if (!(from && to)) {
+        return [];
+      }
+      return [{ from, to }];
+    });
 }

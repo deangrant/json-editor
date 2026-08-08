@@ -17,10 +17,10 @@ interface Pending {
  * Thin client around the JSON web worker.
  */
 export class WorkerClient {
-  private worker: Worker | undefined;
+  // `null` means disposed (terminal). `undefined` means no live worker yet / after crash.
+  private worker: Worker | null | undefined;
   private readonly pending = new Map<string, Pending>();
   private sequence = 0;
-  private disposed = false;
 
   constructor() {
     this.attachWorker();
@@ -33,7 +33,7 @@ export class WorkerClient {
    */
   run(job: WorkerJob): Promise<WorkerResponse> {
     const { worker } = this;
-    if (!worker) {
+    if (worker === null || worker === undefined) {
       return Promise.reject(new Error("Worker disposed."));
     }
 
@@ -69,12 +69,11 @@ export class WorkerClient {
    * Terminates the worker and rejects any in-flight jobs.
    */
   dispose(): void {
-    if (this.disposed) {
+    if (this.worker === null) {
       return;
     }
-    this.disposed = true;
     const { worker } = this;
-    this.worker = undefined;
+    this.worker = null;
     this.rejectAll(new Error("Worker disposed."));
     worker?.terminate();
   }
@@ -83,7 +82,7 @@ export class WorkerClient {
    * Creates the worker and wires message/error handlers.
    */
   private attachWorker(): void {
-    if (this.disposed) {
+    if (this.worker === null) {
       return;
     }
 
@@ -116,7 +115,7 @@ export class WorkerClient {
       if (this.worker === worker) {
         this.worker = undefined;
       }
-      if (!this.disposed) {
+      if (this.worker !== null) {
         this.attachWorker();
       }
     });

@@ -86,6 +86,28 @@
   border-radius: var(--radius-sm);
 }
 
+.keyEdit {
+  min-width: 5rem;
+  max-width: 10rem;
+  padding: 0.1rem 0.3rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-key);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.action {
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
 .empty {
   padding: var(--space-4);
   color: var(--color-ink-muted);

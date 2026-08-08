@@ -5,7 +5,6 @@ import {
   type KeyboardEvent,
   type UIEvent,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -174,18 +173,11 @@ function TableCell({
   onUpdateCell: (rowKey: string | number, column: string, text: string) => void;
 }) {
   const committed = stringifyLeafValue(value);
-  const [draft, setDraft] = useState(committed);
-  const [focused, setFocused] = useState(false);
-  const draftRef = useRef(draft);
+  // `undefined` means not editing — display follows `committed` without an effect.
+  const [draft, setDraft] = useState<string | undefined>(undefined);
+  const draftRef = useRef<string | undefined>(undefined);
   const skipCommitRef = useRef(false);
-  draftRef.current = draft;
-
-  useEffect(() => {
-    if (!focused) {
-      setDraft(committed);
-      draftRef.current = committed;
-    }
-  }, [committed, focused]);
+  const display = draft ?? committed;
 
   const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const { value: next } = event.target;
@@ -194,17 +186,22 @@ function TableCell({
   }, []);
 
   const handleFocus = useCallback(() => {
-    setFocused(true);
-  }, []);
+    draftRef.current = committed;
+    setDraft(committed);
+  }, [committed]);
 
   const handleBlur = useCallback(() => {
-    setFocused(false);
     if (skipCommitRef.current) {
       skipCommitRef.current = false;
+      draftRef.current = undefined;
+      setDraft(undefined);
       return;
     }
-    onUpdateCell(rowKey, column, draftRef.current);
-  }, [column, onUpdateCell, rowKey]);
+    const text = draftRef.current ?? committed;
+    draftRef.current = undefined;
+    setDraft(undefined);
+    onUpdateCell(rowKey, column, text);
+  }, [column, committed, onUpdateCell, rowKey]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -213,12 +210,12 @@ function TableCell({
       }
       if (event.key === "Escape") {
         skipCommitRef.current = true;
-        draftRef.current = committed;
-        setDraft(committed);
+        draftRef.current = undefined;
+        setDraft(undefined);
         event.currentTarget.blur();
       }
     },
-    [committed],
+    [],
   );
 
   return (
@@ -229,7 +226,7 @@ function TableCell({
         onChange={handleChange}
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
-        value={draft}
+        value={display}
       />
     </td>
   );
