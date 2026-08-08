@@ -118,14 +118,22 @@ function matchesFilter(item: JsonValue, op: FilterOp): boolean {
       return fieldValue === op.value;
     case "neq":
       return fieldValue !== op.value;
-    case "gt":
-      return compare(fieldValue, op.value) > 0;
-    case "gte":
-      return compare(fieldValue, op.value) >= 0;
-    case "lt":
-      return compare(fieldValue, op.value) < 0;
-    case "lte":
-      return compare(fieldValue, op.value) <= 0;
+    case "gt": {
+      const ordering = compare(fieldValue, op.value);
+      return ordering !== undefined && ordering > 0;
+    }
+    case "gte": {
+      const ordering = compare(fieldValue, op.value);
+      return ordering !== undefined && ordering >= 0;
+    }
+    case "lt": {
+      const ordering = compare(fieldValue, op.value);
+      return ordering !== undefined && ordering < 0;
+    }
+    case "lte": {
+      const ordering = compare(fieldValue, op.value);
+      return ordering !== undefined && ordering <= 0;
+    }
     case "contains":
       return (
         typeof fieldValue === "string" &&
@@ -143,19 +151,18 @@ function matchesFilter(item: JsonValue, op: FilterOp): boolean {
  * Compares two JSON values for ordering.
  * @param left Left operand.
  * @param right Right operand.
- * @returns Negative, zero, or positive.
+ * @returns Negative, zero, or positive when comparable; otherwise `undefined`.
  */
 function compare(
   left: JsonValue | undefined,
   right: JsonValue | undefined,
-): number {
+): number | undefined {
   if (typeof left === "number" && typeof right === "number") {
     return left - right;
   }
   if (typeof left === "string" && typeof right === "string") {
     return left.localeCompare(right);
   }
-  return 0;
 }
 
 /**
@@ -175,7 +182,7 @@ function sortItems(items: JsonValue[], op: SortOp): JsonValue[] {
       b !== null && typeof b === "object" && !Array.isArray(b)
         ? b[op.field]
         : undefined;
-    const result = compare(left, right);
+    const result = compare(left, right) ?? 0;
     return op.direction === "asc" ? result : -result;
   });
   return copy;

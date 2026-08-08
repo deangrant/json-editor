@@ -13,6 +13,8 @@ import type { SearchReplaceBarProps } from "./index.types.js";
 export function SearchReplaceBar({
   query,
   replaceValue,
+  replaceEnabled,
+  searchPlaceholder,
   onQueryChange,
   onReplaceChange,
   onReplace,
@@ -38,7 +40,7 @@ export function SearchReplaceBar({
         <Input
           label="Search"
           onChange={handleQueryChange}
-          placeholder="Find…"
+          placeholder={searchPlaceholder}
           value={query}
         />
       </div>
@@ -51,10 +53,15 @@ export function SearchReplaceBar({
         />
       </div>
       <div className={styles.actions}>
-        <Button onClick={onReplace} size="sm">
+        <Button disabled={!replaceEnabled} onClick={onReplace} size="sm">
           Replace
         </Button>
-        <Button onClick={onReplaceAll} size="sm" variant="secondary">
+        <Button
+          disabled={!replaceEnabled}
+          onClick={onReplaceAll}
+          size="sm"
+          variant="secondary"
+        >
           Replace all
         </Button>
       </div>

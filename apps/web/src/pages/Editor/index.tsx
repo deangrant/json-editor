@@ -43,7 +43,9 @@ export function EditorPage() {
           onReplaceAll={handleReplaceAll}
           onReplaceChange={setReplaceValue}
           query={state.searchQuery}
+          replaceEnabled={state.mode === "text"}
           replaceValue={state.replaceValue}
+          searchPlaceholder={state.mode === "text" ? "Find…" : "Filter…"}
         />
       }
       side={<EditorSidePanel panel={state.sidePanel} />}

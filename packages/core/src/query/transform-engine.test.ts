@@ -29,6 +29,27 @@ describe("TransformEngine", () => {
     });
   });
 
+  it("excludes mixed-type values from ordered filters", () => {
+    const result = engine.preview(
+      {
+        users: [
+          { age: 36, name: "Ada" },
+          { age: "45", name: "Grace" },
+          { age: 41, name: "Alan" },
+        ],
+      },
+      {
+        ops: [{ field: "age", operator: "gte", type: "filter", value: 40 }],
+        rootPath: ["users"],
+      },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: [{ age: 41, name: "Alan" }],
+    });
+  });
+
   it("applies map renames back to the document", () => {
     const result = engine.apply(root, {
       ops: [

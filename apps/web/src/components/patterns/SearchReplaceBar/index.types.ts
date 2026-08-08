@@ -5,5 +5,7 @@ export interface SearchReplaceBarProps {
   readonly onReplaceAll: () => void;
   readonly onReplaceChange: (value: string) => void;
   readonly query: string;
+  readonly replaceEnabled: boolean;
   readonly replaceValue: string;
+  readonly searchPlaceholder: string;
 }

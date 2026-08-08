@@ -85,6 +85,88 @@ function outcomeFromLocalParse(text: string): ParseOutcome {
 }
 
 /**
+ * Builds a validation issue for schema text that is not JSON.
+ * @param message Parser error message.
+ * @returns Schema-sourced validation issue.
+ */
+function schemaJsonErrorIssue(message: string): ValidationIssue {
+  return {
+    message: `Schema is not valid JSON: ${message}`,
+    path: [],
+    severity: "error",
+    source: "schema",
+  };
+}
+
+/**
+ * Maps a worker validate response to schema issues.
+ * @param response Worker response for a validate job.
+ * @returns Schema validation issues, or a failure issue.
+ */
+function schemaIssuesFromWorkerResponse(
+  response: WorkerResponse,
+): ValidationIssue[] {
+  if (response.ok && response.result.type === "validate") {
+    return response.result.issues;
+  }
+  if (!response.ok) {
+    return [
+      {
+        message: `Schema validation failed: ${response.error}`,
+        path: [],
+        severity: "error",
+        source: "schema",
+      },
+    ];
+  }
+  return [];
+}
+
+/** Result of collecting schema issues for a document value. */
+type SchemaIssueCollection =
+  | { readonly kind: "invalidSchema"; readonly issues: ValidationIssue[] }
+  | { readonly kind: "issues"; readonly issues: ValidationIssue[] };
+
+/**
+ * Parses schema text and optionally validates `json` via the worker.
+ * @param json Document value to validate.
+ * @param schemaText Trimmed schema JSON text.
+ * @param worker Optional worker client.
+ * @returns Invalid-schema terminal issues, or collected schema issues.
+ */
+async function collectSchemaIssues(
+  json: JsonValue,
+  schemaText: string,
+  worker: WorkerClient | undefined,
+): Promise<SchemaIssueCollection> {
+  if (schemaText.length === 0) {
+    return { issues: [], kind: "issues" };
+  }
+
+  const schemaParsed = parser.parse(schemaText);
+  if (!schemaParsed.ok) {
+    return {
+      issues: [schemaJsonErrorIssue(schemaParsed.error.message)],
+      kind: "invalidSchema",
+    };
+  }
+
+  if (!worker) {
+    return { issues: [], kind: "issues" };
+  }
+
+  const response = await worker.run({
+    schema: schemaParsed.value as object,
+    type: "validate",
+    value: json,
+  });
+  return {
+    issues: schemaIssuesFromWorkerResponse(response),
+    kind: "issues",
+  };
+}
+
+/**
  * Owns document state, history, worker jobs, and editor actions.
  * @returns Document context value for the provider.
  */
@@ -105,6 +187,8 @@ export function useDocumentController(): DocumentContextValue {
     undefined,
   );
   const parseBusyOwnerRef = useRef<number | undefined>(undefined);
+  const workerJobIdRef = useRef(0);
+  const workerBusyCountRef = useRef(0);
   const lastHistoryPushAtRef = useRef(0);
   const [historyVersion, setHistoryVersion] = useState(0);
 
@@ -118,6 +202,24 @@ export function useDocumentController(): DocumentContextValue {
       workerRef.current?.dispose();
     };
   }, []);
+
+  const syncWorkerBusy = useCallback(() => {
+    const busy =
+      workerBusyCountRef.current > 0 || parseBusyOwnerRef.current !== undefined;
+    dispatch({ busy, type: "setWorkerBusy" });
+  }, []);
+
+  const beginWorkerJob = useCallback(() => {
+    workerJobIdRef.current += 1;
+    workerBusyCountRef.current += 1;
+    syncWorkerBusy();
+    return workerJobIdRef.current;
+  }, [syncWorkerBusy]);
+
+  const endWorkerJob = useCallback(() => {
+    workerBusyCountRef.current = Math.max(0, workerBusyCountRef.current - 1);
+    syncWorkerBusy();
+  }, [syncWorkerBusy]);
 
   const pushHistory = useCallback(
     (
@@ -165,7 +267,7 @@ export function useDocumentController(): DocumentContextValue {
       const showBusy = bytes >= LARGE_DOCUMENT_BYTES;
       if (showBusy) {
         parseBusyOwnerRef.current = generation;
-        dispatch({ busy: true, type: "setWorkerBusy" });
+        syncWorkerBusy();
       }
 
       try {
@@ -195,11 +297,11 @@ export function useDocumentController(): DocumentContextValue {
       } finally {
         if (parseBusyOwnerRef.current === generation) {
           parseBusyOwnerRef.current = undefined;
-          dispatch({ busy: false, type: "setWorkerBusy" });
+          syncWorkerBusy();
         }
       }
     },
-    [pushHistory],
+    [pushHistory, syncWorkerBusy],
   );
 
   const scheduleParse = useCallback(
@@ -290,43 +392,46 @@ export function useDocumentController(): DocumentContextValue {
 
   const runFormat = useCallback(
     async (mode: "beautify" | "compact") => {
-      if (state.json === undefined) {
+      const { json } = state;
+      if (json === undefined) {
         return;
       }
-      dispatch({ busy: true, type: "setWorkerBusy" });
+      const jobId = beginWorkerJob();
       try {
         const worker = workerRef.current;
         if (!worker) {
+          if (jobId !== workerJobIdRef.current) {
+            return;
+          }
           const text =
             mode === "compact"
-              ? formatter.compact(state.json)
-              : formatter.beautify(state.json);
-          dispatch({ json: state.json, text, type: "setJson" });
-          pushHistory(text, state.json, { force: true });
+              ? formatter.compact(json)
+              : formatter.beautify(json);
+          dispatch({ json, text, type: "setJson" });
+          pushHistory(text, json, { force: true });
           return;
         }
         const response = await worker.run({
           mode,
           type: "format",
-          value: state.json,
+          value: json,
         });
-        if (
-          response.ok &&
-          response.result.type === "format" &&
-          state.json !== undefined
-        ) {
+        if (jobId !== workerJobIdRef.current) {
+          return;
+        }
+        if (response.ok && response.result.type === "format") {
           dispatch({
-            json: state.json,
+            json,
             text: response.result.text,
             type: "setJson",
           });
-          pushHistory(response.result.text, state.json, { force: true });
+          pushHistory(response.result.text, json, { force: true });
         }
       } finally {
-        dispatch({ busy: false, type: "setWorkerBusy" });
+        endWorkerJob();
       }
     },
-    [pushHistory, state.json],
+    [beginWorkerJob, endWorkerJob, pushHistory, state],
   );
 
   const format = useCallback(async () => {
@@ -338,13 +443,17 @@ export function useDocumentController(): DocumentContextValue {
   }, [runFormat]);
 
   const repair = useCallback(async () => {
-    dispatch({ busy: true, type: "setWorkerBusy" });
+    const { text } = state;
+    const jobId = beginWorkerJob();
     try {
       const worker = workerRef.current;
       if (!worker) {
         return;
       }
-      const response = await worker.run({ text: state.text, type: "repair" });
+      const response = await worker.run({ text, type: "repair" });
+      if (jobId !== workerJobIdRef.current) {
+        return;
+      }
       if (response.ok && response.result.type === "repair") {
         dispatch({
           text: response.result.text,
@@ -352,9 +461,9 @@ export function useDocumentController(): DocumentContextValue {
         });
       }
     } finally {
-      dispatch({ busy: false, type: "setWorkerBusy" });
+      endWorkerJob();
     }
-  }, [state.text]);
+  }, [beginWorkerJob, endWorkerJob, state]);
 
   const acceptRepair = useCallback(() => {
     if (!state.repairSuggestion) {
@@ -365,64 +474,38 @@ export function useDocumentController(): DocumentContextValue {
   }, [setText, state.repairSuggestion]);
 
   const validate = useCallback(async () => {
-    if (state.json === undefined) {
+    const { json, schemaText } = state;
+    if (json === undefined) {
       dispatch({ issues: [], type: "setValidationIssues" });
       return;
     }
 
-    dispatch({ busy: true, type: "setWorkerBusy" });
+    const jobId = beginWorkerJob();
     try {
-      let schemaIssues: ValidationIssue[] = [];
-      const schemaText = state.schemaText.trim();
-      if (schemaText.length > 0) {
-        const schemaParsed = parser.parse(schemaText);
-        if (!schemaParsed.ok) {
-          dispatch({
-            issues: [
-              {
-                message: `Schema is not valid JSON: ${schemaParsed.error.message}`,
-                path: [],
-                severity: "error",
-                source: "schema",
-              },
-            ],
-            type: "setValidationIssues",
-          });
-          return;
-        }
-
-        const worker = workerRef.current;
-        if (worker) {
-          const response = await worker.run({
-            schema: schemaParsed.value as object,
-            type: "validate",
-            value: state.json,
-          });
-          if (response.ok && response.result.type === "validate") {
-            schemaIssues = response.result.issues;
-          } else if (!response.ok) {
-            schemaIssues = [
-              {
-                message: `Schema validation failed: ${response.error}`,
-                path: [],
-                severity: "error",
-                source: "schema",
-              },
-            ];
-          }
-        }
+      const schemaResult = await collectSchemaIssues(
+        json,
+        schemaText.trim(),
+        workerRef.current,
+      );
+      if (jobId !== workerJobIdRef.current) {
+        return;
       }
-
+      if (schemaResult.kind === "invalidSchema") {
+        dispatch({
+          issues: schemaResult.issues,
+          type: "setValidationIssues",
+        });
+        return;
+      }
       const custom = new CompositeValidator([createBannedFlagValidator()]);
-      const customIssues = custom.validate(state.json);
       dispatch({
-        issues: [...schemaIssues, ...customIssues],
+        issues: [...schemaResult.issues, ...custom.validate(json)],
         type: "setValidationIssues",
       });
     } finally {
-      dispatch({ busy: false, type: "setWorkerBusy" });
+      endWorkerJob();
     }
-  }, [state.json, state.schemaText]);
+  }, [beginWorkerJob, endWorkerJob, state]);
 
   const undo = useCallback(() => {
     const snapshot = historyRef.current?.undo();
@@ -446,25 +529,32 @@ export function useDocumentController(): DocumentContextValue {
 
   const applyTransform = useCallback(
     async (program: TransformProgram) => {
-      if (state.json === undefined) {
+      const { json } = state;
+      if (json === undefined) {
         return;
       }
-      dispatch({ busy: true, type: "setWorkerBusy" });
+      const jobId = beginWorkerJob();
       try {
         const worker = workerRef.current;
         if (worker) {
           const response = await worker.run({
             program,
             type: "transform",
-            value: state.json,
+            value: json,
           });
+          if (jobId !== workerJobIdRef.current) {
+            return;
+          }
           if (response.ok && response.result.type === "transform") {
             setJson(response.result.value);
             dispatch({ preview: undefined, type: "setTransformPreview" });
             return;
           }
         }
-        const local = transformEngine.apply(state.json, program);
+        if (jobId !== workerJobIdRef.current) {
+          return;
+        }
+        const local = transformEngine.apply(json, program);
         if (local.ok) {
           setJson(local.value);
           dispatch({ preview: undefined, type: "setTransformPreview" });
@@ -475,10 +565,10 @@ export function useDocumentController(): DocumentContextValue {
           });
         }
       } finally {
-        dispatch({ busy: false, type: "setWorkerBusy" });
+        endWorkerJob();
       }
     },
-    [setJson, state.json],
+    [beginWorkerJob, endWorkerJob, setJson, state],
   );
 
   const previewTransform = useCallback(
@@ -502,7 +592,7 @@ export function useDocumentController(): DocumentContextValue {
 
   const replaceInText = useCallback(
     (query: string, replacement: string, all: boolean) => {
-      if (!query) {
+      if (state.mode !== "text" || !query) {
         return;
       }
       if (all) {
@@ -519,7 +609,7 @@ export function useDocumentController(): DocumentContextValue {
           state.text.slice(index + query.length),
       );
     },
-    [setText, state.text],
+    [setText, state.mode, state.text],
   );
 
   // historyVersion triggers re-render so undo/redo flags stay current.
