@@ -8,8 +8,9 @@ import {
   useDocumentState,
 } from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
-import { Button, Toolbar } from "../../core/index.js";
-import { ModeSwitch } from "../../patterns/index.js";
+import { Button } from "../../core/Button/index.js";
+import { Toolbar } from "../../core/Toolbar/index.js";
+import { ModeSwitch } from "../../patterns/ModeSwitch/index.js";
 import styles from "./index.module.css";
 
 /**

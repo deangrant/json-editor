@@ -5,8 +5,8 @@ import {
   useDocumentState,
 } from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
-import { Button } from "../../core/index.js";
-import { ValidationList } from "../../patterns/index.js";
+import { Button } from "../../core/Button/index.js";
+import { ValidationList } from "../../patterns/ValidationList/index.js";
 import styles from "./index.module.css";
 
 /**

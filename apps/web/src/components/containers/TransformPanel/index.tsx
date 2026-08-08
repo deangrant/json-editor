@@ -10,7 +10,9 @@ import {
   useDocumentTransform,
 } from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
-import { Button, Input, Select } from "../../core/index.js";
+import { Button } from "../../core/Button/index.js";
+import { Input } from "../../core/Input/index.js";
+import { Select } from "../../core/Select/index.js";
 import styles from "./index.module.css";
 
 const NUMERIC_SEGMENT = /^\d+$/;

@@ -58,18 +58,18 @@ export function useDocumentController(
 ): DocumentContextValue {
   const { formatter, transformEngine, fileIo } = deps;
   const depsRef = useRef(deps);
-  depsRef.current = deps;
 
   const [state, dispatch] = useReducer(
     documentReducer,
     undefined,
     createInitialState,
   );
-  const historyRef = useRef<IHistoryStack<DocumentSnapshot> | null>(null);
-  if (historyRef.current === null) {
-    historyRef.current = deps.createHistory();
-    historyRef.current.push({ json: state.json, text: state.text });
-  }
+  const [history] = useState<IHistoryStack<DocumentSnapshot>>(() => {
+    const stack = deps.createHistory();
+    const initial = createInitialState();
+    stack.push({ json: initial.json, text: initial.text });
+    return stack;
+  });
   const workerRef = useRef<WorkerPort | undefined>(undefined);
   const parseGenerationRef = useRef(0);
   const parseTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -80,6 +80,10 @@ export function useDocumentController(
   const workerBusyCountRef = useRef(0);
   const lastHistoryPushAtRef = useRef(0);
   const [historyVersion, setHistoryVersion] = useState(0);
+
+  useEffect(() => {
+    depsRef.current = deps;
+  });
 
   useEffect(() => {
     workerRef.current = depsRef.current.createWorker();
@@ -116,10 +120,6 @@ export function useDocumentController(
       json: JsonValue | undefined,
       options?: { readonly force?: boolean },
     ) => {
-      const history = historyRef.current;
-      if (!history) {
-        return;
-      }
       const current = history.current();
       const now = Date.now();
       const decision = decideHistoryWrite({
@@ -141,7 +141,7 @@ export function useDocumentController(
       lastHistoryPushAtRef.current = now;
       setHistoryVersion((version) => version + 1);
     },
-    [],
+    [history],
   );
 
   const invalidatePendingParse = useCallback(() => {
@@ -271,11 +271,11 @@ export function useDocumentController(
       return;
     }
     dispatch({ fileName: file.fileName, text: file.text, type: "load" });
-    historyRef.current?.clear();
+    history.clear();
     lastHistoryPushAtRef.current = 0;
     setHistoryVersion((version) => version + 1);
     await parseNow(file.text);
-  }, [fileIo, parseNow]);
+  }, [fileIo, history, parseNow]);
 
   const saveFile = useCallback(() => {
     fileIo.saveJsonFile(state.text, state.fileName ?? "document.json");
@@ -401,24 +401,24 @@ export function useDocumentController(
   }, [beginWorkerJob, endWorkerJob, state]);
 
   const undo = useCallback(() => {
-    const snapshot = historyRef.current?.undo();
+    const snapshot = history.undo();
     if (!snapshot) {
       return;
     }
     invalidatePendingParse();
     dispatch({ snapshot, type: "restoreSnapshot" });
     setHistoryVersion((version) => version + 1);
-  }, [invalidatePendingParse]);
+  }, [history, invalidatePendingParse]);
 
   const redo = useCallback(() => {
-    const snapshot = historyRef.current?.redo();
+    const snapshot = history.redo();
     if (!snapshot) {
       return;
     }
     invalidatePendingParse();
     dispatch({ snapshot, type: "restoreSnapshot" });
     setHistoryVersion((version) => version + 1);
-  }, [invalidatePendingParse]);
+  }, [history, invalidatePendingParse]);
 
   const applyTransform = useCallback(
     async (program: TransformProgram) => {
@@ -505,10 +505,10 @@ export function useDocumentController(
     [setText, state.mode, state.text],
   );
 
-  // Include historyVersion so state bumps refresh ref-backed undo/redo flags.
+  // Include historyVersion so state bumps refresh undo/redo flags after stack mutations.
   const historyFlags = {
-    canRedo: historyRef.current?.canRedo() ?? false,
-    canUndo: historyRef.current?.canUndo() ?? false,
+    canRedo: history.canRedo(),
+    canUndo: history.canUndo(),
     historyVersion,
   } satisfies {
     canRedo: boolean;

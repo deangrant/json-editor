@@ -1,6 +1,7 @@
 import { type ChangeEvent, useCallback } from "react";
 
-import { Button, Input } from "../../core/index.js";
+import { Button } from "../../core/Button/index.js";
+import { Input } from "../../core/Input/index.js";
 import styles from "./index.module.css";
 import type { SearchReplaceBarProps } from "./index.types.js";
 

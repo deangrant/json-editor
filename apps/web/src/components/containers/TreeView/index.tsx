@@ -30,7 +30,8 @@ import {
   type TreeRow,
 } from "../../../utils/tree-flatten.js";
 import { getVirtualWindow } from "../../../utils/virtual-window.js";
-import { ColorPickerPopover, TimestampPopover } from "../../patterns/index.js";
+import { ColorPickerPopover } from "../../patterns/ColorPickerPopover/index.js";
+import { TimestampPopover } from "../../patterns/TimestampPopover/index.js";
 import styles from "./index.module.css";
 
 const ROW_HEIGHT = 34;
