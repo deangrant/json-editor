@@ -15,6 +15,7 @@ import {
   parseLeafValue,
   stringifyLeafValue,
 } from "../../../utils/json-leaf-edit.js";
+import { resolveTableCellBlur } from "../../../utils/table-cell-edit.js";
 import { getVirtualWindow } from "../../../utils/virtual-window.js";
 import styles from "./index.module.css";
 
@@ -191,16 +192,17 @@ function TableCell({
   }, [committed]);
 
   const handleBlur = useCallback(() => {
-    if (skipCommitRef.current) {
-      skipCommitRef.current = false;
-      draftRef.current = undefined;
-      setDraft(undefined);
-      return;
-    }
-    const text = draftRef.current ?? committed;
+    const result = resolveTableCellBlur({
+      committed,
+      draft: draftRef.current,
+      skipCommit: skipCommitRef.current,
+    });
+    skipCommitRef.current = false;
     draftRef.current = undefined;
     setDraft(undefined);
-    onUpdateCell(rowKey, column, text);
+    if (result.action === "commit") {
+      onUpdateCell(rowKey, column, result.text);
+    }
   }, [column, committed, onUpdateCell, rowKey]);
 
   const handleKeyDown = useCallback(

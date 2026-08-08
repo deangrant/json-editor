@@ -60,4 +60,21 @@ describe("jsonPath", () => {
   it("formats paths for display", () => {
     expect(formatPath(["a", "b", 2, "c"])).toBe("$.a.b[2].c");
   });
+
+  it("throws when deleting the document root", () => {
+    expect(() => deleteAtPath(root, [])).toThrow(
+      "Cannot delete the document root.",
+    );
+  });
+
+  it("formats special keys and the empty path", () => {
+    expect(formatPath([])).toBe("$");
+    expect(formatPath(["a-b", ""])).toBe('$["a-b"][""]');
+    expect(formatPath(["with space"])).toBe('$["with space"]');
+  });
+
+  it("creates missing mid-path object parents when setting", () => {
+    const next = setAtPath({}, ["nested", "leaf"], 1);
+    expect(next).toEqual({ nested: { leaf: 1 } });
+  });
 });

@@ -17,7 +17,23 @@ describe("SchemaValidator", () => {
     expect(issues[0]?.source).toBe("schema");
   });
 
-  it("merges custom validators", () => {
+  it("throws when Ajv cannot compile the schema", () => {
+    expect(
+      () =>
+        new SchemaValidator({
+          type: "not-a-valid-json-schema-type",
+        }),
+    ).toThrow();
+  });
+
+  it("fails closed for invalid data against a valid schema", () => {
+    const validator = new SchemaValidator({ type: "string" });
+    const issues = validator.validate({ not: "a string" });
+    expect(issues.length).toBeGreaterThan(0);
+    expect(issues.every((issue) => issue.severity === "error")).toBe(true);
+  });
+
+  it("merges schema and custom issues in one validate call", () => {
     const custom: IJsonValidator = {
       validate: (data) => {
         if (
@@ -40,10 +56,17 @@ describe("SchemaValidator", () => {
     };
 
     const composite = new CompositeValidator([
-      new SchemaValidator({ type: "object" }),
+      new SchemaValidator({
+        properties: { name: { type: "string" } },
+        required: ["name"],
+        type: "object",
+      }),
       custom,
     ]);
 
-    expect(composite.validate({ banned: true })).toHaveLength(1);
+    const issues = composite.validate({ banned: true, name: 1 });
+    expect(issues.some((issue) => issue.source === "schema")).toBe(true);
+    expect(issues.some((issue) => issue.source === "custom")).toBe(true);
+    expect(issues.length).toBeGreaterThanOrEqual(2);
   });
 });

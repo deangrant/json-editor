@@ -14,6 +14,11 @@ describe("getVirtualWindow", () => {
       offsetY: 0,
       start: 0,
     });
+    expect(getVirtualWindow(0, 0, 0, 0)).toEqual({
+      end: 0,
+      offsetY: 0,
+      start: 0,
+    });
   });
 
   it("computes the top window with default overscan", () => {

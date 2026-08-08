@@ -2,6 +2,10 @@ import { useEffect, useRef } from "react";
 
 import { useDocument } from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
+import {
+  fullDocumentReplaceSpec,
+  needsExternalDocumentReplace,
+} from "./external-sync.js";
 import styles from "./index.module.css";
 
 /** Minimal CodeMirror view surface used by this component. */
@@ -113,17 +117,14 @@ export function TextView() {
       return;
     }
     const current = view.state.doc.toString();
-    if (current !== state.text) {
-      applyingExternalChangeRef.current = true;
-      view.dispatch({
-        changes: {
-          from: 0,
-          insert: state.text,
-          to: current.length,
-        },
-      });
-      applyingExternalChangeRef.current = false;
+    if (!needsExternalDocumentReplace(current, state.text)) {
+      return;
     }
+    applyingExternalChangeRef.current = true;
+    view.dispatch({
+      changes: fullDocumentReplaceSpec(current.length, state.text),
+    });
+    applyingExternalChangeRef.current = false;
   }, [state.text]);
 
   return (

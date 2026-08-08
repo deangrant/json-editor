@@ -31,6 +31,7 @@ import type {
 } from "../types/document.types.js";
 import { createBannedFlagValidator } from "../utils/custom-validators.js";
 import { runPromise } from "../utils/run-promise.js";
+import { decideHistoryWrite } from "./document-controller/history-policy.js";
 import {
   outcomeFromLocalParse,
   outcomeFromWorkerParseResponse,
@@ -113,17 +114,19 @@ export function useDocumentController(): DocumentContextValue {
         return;
       }
       const current = history.current();
-      if (current?.text === text) {
+      const now = Date.now();
+      const decision = decideHistoryWrite({
+        coalesceMs: HISTORY_COALESCE_MS,
+        currentText: current?.text,
+        force: options?.force === true,
+        lastPushAt: lastHistoryPushAtRef.current,
+        nextText: text,
+        now,
+      });
+      if (decision === "skip") {
         return;
       }
-
-      const now = Date.now();
-      const force = options?.force === true;
-      if (
-        !force &&
-        current !== undefined &&
-        now - lastHistoryPushAtRef.current < HISTORY_COALESCE_MS
-      ) {
+      if (decision === "replace") {
         history.replacePresent({ json, text });
       } else {
         history.push({ json, text });
