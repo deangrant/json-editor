@@ -18,8 +18,8 @@ export function TimestampPopover({
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      const next = Date.parse(event.target.value);
-      if (!Number.isNaN(next)) {
+      const next = parseLocalInputValue(event.target.value);
+      if (next !== undefined) {
         onChangeEpochMs(next);
       }
     },
@@ -43,12 +43,56 @@ export function TimestampPopover({
 }
 
 /**
- * Converts epoch ms to a `datetime-local` value.
+ * Converts epoch ms to a `datetime-local` value in local wall time.
  * @param epochMs Epoch milliseconds.
- * @returns Local datetime string.
+ * @returns Local datetime string with seconds.
  */
 function toLocalInputValue(epochMs: number): string {
   const date = new Date(epochMs);
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+/**
+ * Parses a `datetime-local` value as local wall time.
+ * @param value Input value from the control.
+ * @returns Epoch milliseconds, or `undefined` when invalid.
+ */
+function parseLocalInputValue(value: string): number | undefined {
+  const [datePart, timePart] = value.split("T");
+  if (!(datePart && timePart)) {
+    return;
+  }
+
+  const dateParts = datePart.split("-").map(Number);
+  const timeParts = timePart.split(":").map(Number);
+  if (dateParts.length < 3 || timeParts.length < 2) {
+    return;
+  }
+
+  const [year, month, day] = dateParts;
+  const [hour, minute, second = 0] = timeParts;
+  if (
+    year === undefined ||
+    month === undefined ||
+    day === undefined ||
+    hour === undefined ||
+    minute === undefined ||
+    [year, month, day, hour, minute, second].some((part) => Number.isNaN(part))
+  ) {
+    return;
+  }
+
+  const epochMs = new Date(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    second,
+  ).getTime();
+  if (Number.isNaN(epochMs)) {
+    return;
+  }
+  return epochMs;
 }

@@ -112,7 +112,7 @@ export function EditorToolbar() {
         </div>
       </Toolbar>
       {state.parseError ? (
-        <div className={styles.banner}>
+        <div className={styles.banner} role="alert">
           <span>
             Invalid JSON: {state.parseError.message}
             {state.parseError.position === undefined
@@ -132,7 +132,7 @@ export function EditorToolbar() {
         </div>
       ) : null}
       {state.repairSuggestion && !state.parseError ? (
-        <div className={styles.banner}>
+        <div className={styles.banner} role="alert">
           <span>Repair suggestion ready.</span>
           <div className={styles.bannerActions}>
             <Button onClick={acceptRepair} size="sm" variant="primary">

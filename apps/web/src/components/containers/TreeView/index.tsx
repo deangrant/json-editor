@@ -129,9 +129,11 @@ export function TreeView() {
 
   return (
     <div
+      aria-label="JSON tree"
       className={styles.root}
       onScroll={handleScroll}
       ref={handleViewportRef}
+      role="tree"
     >
       <div
         className={styles.viewport}
@@ -227,9 +229,13 @@ function TreeRowItem({
 
   return (
     <div
+      aria-expanded={row.expandable ? row.expanded : undefined}
+      aria-level={row.depth + 1}
+      aria-selected={selected}
       className={[styles.row, selected ? styles.rowSelected : ""]
         .filter(Boolean)
         .join(" ")}
+      role="treeitem"
       style={{
         height: ROW_HEIGHT,
         paddingLeft: `${0.75 + row.depth * 1.1}rem`,

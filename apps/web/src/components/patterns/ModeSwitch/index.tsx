@@ -45,6 +45,7 @@ function ModeButton({
 
   return (
     <button
+      aria-pressed={active}
       className={[styles.button, active ? styles.active : ""]
         .filter(Boolean)
         .join(" ")}

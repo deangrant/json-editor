@@ -8,7 +8,7 @@ import type { StatusBarProps } from "./index.types.js";
  */
 export function StatusBar({ sizeWarning, workerBusy }: StatusBarProps) {
   return (
-    <footer className={styles.bar}>
+    <footer aria-live="polite" className={styles.bar}>
       {sizeWarning ? (
         <span className={`${styles.item} ${styles.warning}`}>
           {sizeWarning}

@@ -20,30 +20,10 @@ export class WorkerClient {
   private worker: Worker | undefined;
   private readonly pending = new Map<string, Pending>();
   private sequence = 0;
+  private disposed = false;
 
   constructor() {
-    this.worker = new Worker(
-      new URL("../workers/json-worker.ts", import.meta.url),
-      {
-        type: "module",
-      },
-    );
-    this.worker.addEventListener(
-      "message",
-      (event: MessageEvent<WorkerResponse>) => {
-        const response = event.data;
-        const entry = this.pending.get(response.id);
-        if (!entry) {
-          return;
-        }
-        this.pending.delete(response.id);
-        clearTimeout(entry.timeoutId);
-        entry.resolve(response);
-      },
-    );
-    this.worker.addEventListener("error", (event) => {
-      this.rejectAll(new Error(event.message || "Worker failed."));
-    });
+    this.attachWorker();
   }
 
   /**
@@ -89,13 +69,57 @@ export class WorkerClient {
    * Terminates the worker and rejects any in-flight jobs.
    */
   dispose(): void {
-    const { worker } = this;
-    if (!worker) {
+    if (this.disposed) {
       return;
     }
+    this.disposed = true;
+    const { worker } = this;
     this.worker = undefined;
     this.rejectAll(new Error("Worker disposed."));
-    worker.terminate();
+    worker?.terminate();
+  }
+
+  /**
+   * Creates the worker and wires message/error handlers.
+   */
+  private attachWorker(): void {
+    if (this.disposed) {
+      return;
+    }
+
+    const worker = new Worker(
+      new URL("../workers/json-worker.ts", import.meta.url),
+      {
+        type: "module",
+      },
+    );
+    this.worker = worker;
+
+    worker.addEventListener(
+      "message",
+      (event: MessageEvent<WorkerResponse>) => {
+        const response = event.data;
+        const entry = this.pending.get(response.id);
+        if (!entry) {
+          return;
+        }
+        this.pending.delete(response.id);
+        clearTimeout(entry.timeoutId);
+        entry.resolve(response);
+      },
+    );
+
+    worker.addEventListener("error", (event) => {
+      const message = event.message || "unknown error";
+      this.rejectAll(new Error(`Worker crashed: ${message}`));
+      worker.terminate();
+      if (this.worker === worker) {
+        this.worker = undefined;
+      }
+      if (!this.disposed) {
+        this.attachWorker();
+      }
+    });
   }
 
   /**

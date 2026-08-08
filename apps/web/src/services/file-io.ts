@@ -46,7 +46,10 @@ export function saveJsonFile(text: string, fileName = "document.json"): void {
   anchor.href = url;
   anchor.download = fileName.endsWith(".json") ? fileName : `${fileName}.json`;
   anchor.click();
-  URL.revokeObjectURL(url);
+  // Delay revoke so browsers that start the download asynchronously still have a live URL.
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 /**
