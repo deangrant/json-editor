@@ -60,23 +60,6 @@
       "preset": "recommended"
     }
   },
-  "overrides": [
-    {
-      "includes": [
-        "apps/web/src/components/core/index.ts",
-        "apps/web/src/components/patterns/index.ts",
-        "apps/web/src/components/containers/index.ts",
-        "apps/web/src/components/layouts/index.ts"
-      ],
-      "linter": {
-        "rules": {
-          "performance": {
-            "noBarrelFile": "off"
-          }
-        }
-      }
-    }
-  ],
   "vcs": {
     "clientKind": "git",
     "enabled": true,

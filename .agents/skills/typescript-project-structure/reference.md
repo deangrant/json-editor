@@ -31,41 +31,37 @@ src/
 │   │   │   ├── index.tsx
 │   │   │   ├── index.module.css
 │   │   │   └── index.types.ts
-│   │   ├── Input/
-│   │   │   ├── index.tsx
-│   │   │   ├── index.module.css
-│   │   │   └── index.types.ts
-│   │   └── index.ts
+│   │   └── Input/
+│   │       ├── index.tsx
+│   │       ├── index.module.css
+│   │       └── index.types.ts
 │   ├── patterns/
 │   │   ├── Card/
 │   │   │   ├── index.tsx
 │   │   │   ├── index.module.css
 │   │   │   └── index.types.ts
-│   │   ├── FormField/
-│   │   │   ├── index.tsx
-│   │   │   ├── index.module.css
-│   │   │   └── index.types.ts
-│   │   └── index.ts
+│   │   └── FormField/
+│   │       ├── index.tsx
+│   │       ├── index.module.css
+│   │       └── index.types.ts
 │   ├── containers/
 │   │   ├── Header/
 │   │   │   ├── index.tsx
 │   │   │   ├── index.module.css
 │   │   │   └── index.types.ts
-│   │   ├── UserProfile/
-│   │   │   ├── index.tsx
-│   │   │   ├── index.module.css
-│   │   │   └── index.types.ts
-│   │   └── index.ts
+│   │   └── UserProfile/
+│   │       ├── index.tsx
+│   │       ├── index.module.css
+│   │       └── index.types.ts
 │   └── layouts/
 │       ├── MainLayout/
 │       │   ├── index.tsx
 │       │   ├── index.module.css
 │       │   └── index.types.ts
-│       ├── AuthLayout/
-│       │   ├── index.tsx
-│       │   ├── index.module.css
-│       │   └── index.types.ts
-│       └── index.ts
+│       └── AuthLayout/
+│           ├── index.tsx
+│           ├── index.module.css
+│           └── index.types.ts
 ├── constants/
 │   ├── api.constants.ts
 │   ├── app.constants.ts
@@ -192,7 +188,7 @@ src/
 | Component entry | `index.tsx` | `Button/index.tsx` |
 | Component styles | `index.module.css` | `Button/index.module.css` |
 | Component types | `index.types.ts` | `Button/index.types.ts` |
-| Layer barrel | `index.ts` | `core/index.ts` |
+| Component import | Direct folder path | `core/Button` |
 | Hook | `use` + Name | `useAuth.ts` |
 | Constants | `*.constants.ts` | `api.constants.ts` |
 | Shared types | `*.types.ts` | `common.types.ts` |
@@ -201,13 +197,12 @@ src/
 
 ---
 
-## Barrel export rules
+## Import rules
 
-1. Export only the public API from each `index.ts`.
-2. Keep one barrel per layer folder under `components/`.
-3. Keep one barrel for `hooks/`, `constants/`, `types/`, and `utils/` when useful.
-4. Stop a circular import: import the concrete file, not the barrel.
-5. Prefer a direct path when a large barrel breaks tree-shaking.
+1. Do **not** add layer barrels under `components/core`, `patterns`, `containers`, or `layouts`.
+2. Import each shared component by its folder path (for example `components/core/Button`).
+3. Optional barrels for `hooks/`, `constants/`, `types/`, and `utils/` are allowed only when lint stays clean and no cycles form.
+4. Prefer a direct path when a barrel breaks tree-shaking or creates a cycle.
 
 ---
 

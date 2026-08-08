@@ -10,7 +10,7 @@ description: >-
 trigger: >-
   React TypeScript project structure, component layers, core, patterns,
   containers, layouts, folder-per-component, CSS Modules, React folder layout,
-  pages, hooks, contexts, services, stores, barrel export, component hierarchy
+  pages, hooks, contexts, services, stores, direct imports, component hierarchy
 ---
 
 # TypeScript Project Structure (React)
@@ -62,9 +62,9 @@ Put each shared component in its own folder. Use these files:
 Export the component from `index.tsx`. Import styles from `index.module.css`.
 Keep types in `index.types.ts`.
 
-Add a barrel export file `index.ts` in each layer folder (`core/`,
-`patterns/`, `containers/`, `layouts/`). Re-export the public components from
-that file.
+Do **not** add a layer barrel (`components/core/index.ts`, and the same for
+`patterns/`, `containers/`, `layouts/`). Import each component by its folder
+path.
 
 ---
 
@@ -93,26 +93,23 @@ Put page-only UI in `pages/<PageName>/components/`. Do not put that UI in
 
 ---
 
-## 4. Barrel exports
+## 4. Imports (no component-layer barrels)
 
-A **barrel export** is an `index.ts` that re-exports public symbols from a
-folder.
-
-Use barrel exports for:
-
-- Each component layer (`components/core/index.ts`, and the same for patterns,
-  containers, layouts).
-- `hooks/`, `constants/`, `types/`, `utils/`, and similar shared folders.
-
-Import from the barrel when the path is stable:
+Import shared components by **direct module path**. Do not create or use layer
+barrels under `components/`.
 
 ```ts
-import { Button, Input } from "@/components/core";
+import { Button } from "@/components/core/Button";
+import { Input } from "@/components/core/Input";
 ```
 
-**Caution:** Avoid circular imports through barrels. Prefer a direct file path
-when a barrel causes a cycle. Prefer direct imports when tree-shaking fails for
-a large barrel.
+**Why:** Biome `noBarrelFile` and React Doctor `no-barrel-import` reject
+component-layer re-export files. Direct paths keep tree-shaking reliable and
+avoid circular imports through barrels.
+
+Optional barrels for non-component folders (`hooks/`, `constants/`, `types/`,
+`utils/`) are allowed only when they do not trip lint and do not create cycles.
+Prefer direct paths there too when in doubt.
 
 ---
 
@@ -151,7 +148,7 @@ Use one name for one concept. Do not invent synonyms for the same folder role.
 - [ ] Does the folder have `index.tsx`?
 - [ ] Does the folder have `index.module.css` when styles are needed?
 - [ ] Does the folder have `index.types.ts` when props or local types exist?
-- [ ] Does the layer barrel export the public component?
+- [ ] Are call sites importing this component by direct path (no layer barrel)?
 
 **Cross-cutting code**
 

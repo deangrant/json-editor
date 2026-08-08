@@ -188,9 +188,10 @@ Views:
 - **Text** — CodeMirror; external sync helpers keep editor and document state aligned
 - **Table** — array-of-objects grid with cell edits
 
-App code imports components by **direct module path**.
-Layer `index.ts` barrels may exist as a public API surface but are not used for
-in-app imports (React Doctor `no-barrel-import`).
+App code imports components by **direct module path** (for example
+`components/core/Button/index.js`). Do not add layer `index.ts` barrels under
+`components/core`, `patterns`, `containers`, or `layouts` — Biome
+`noBarrelFile` and React Doctor `no-barrel-import` both forbid them.
 
 ## Extension points
 

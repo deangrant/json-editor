@@ -107,7 +107,7 @@ export interface FormFieldProps {
 **`index.tsx`**
 
 ```tsx
-import { Input } from "@/components/core";
+import { Input } from "@/components/core/Input";
 import styles from "./index.module.css";
 import type { FormFieldProps } from "./index.types";
 
@@ -132,28 +132,22 @@ export function FormField({
 }
 ```
 
-**Tie-back:** A pattern groups core units for one job. Import core units from
-the core barrel.
+**Tie-back:** A pattern groups core units for one job. Import core units by
+direct component path.
 
 ---
 
-## Example 3: Barrel export and call site
-
-**`src/components/core/index.ts`**
-
-```ts
-export { Button } from "./Button";
-export { Input } from "./Input";
-```
+## Example 3: Direct component imports
 
 **Call site**
 
 ```ts
-import { Button, Input } from "@/components/core";
+import { Button } from "@/components/core/Button";
+import { Input } from "@/components/core/Input";
 ```
 
-**Tie-back:** Export only the public API from the layer barrel. Import from the
-barrel at stable call sites.
+**Tie-back:** Do not add `components/core/index.ts` (or other layer barrels).
+Import each public component from its folder.
 
 ---
 
@@ -197,7 +191,7 @@ export function HeroSection({ title, subtitle }: HeroSectionProps) {
 **`index.tsx`**
 
 ```tsx
-import { MainLayout } from "@/components/layouts";
+import { MainLayout } from "@/components/layouts/MainLayout";
 import { HeroSection } from "./components/HeroSection";
 
 export function HomePage() {
