@@ -134,6 +134,9 @@ type SchemaIssueCollection =
  * @param worker Optional worker client.
  * @returns Invalid-schema terminal issues, or collected schema issues.
  */
+/** Maximum schema text size accepted for validation jobs. */
+const MAX_SCHEMA_TEXT_BYTES = 256 * 1024;
+
 async function collectSchemaIssues(
   json: JsonValue,
   schemaText: string,
@@ -141,6 +144,21 @@ async function collectSchemaIssues(
 ): Promise<SchemaIssueCollection> {
   if (schemaText.length === 0) {
     return { issues: [], kind: "issues" };
+  }
+
+  const schemaBytes = new TextEncoder().encode(schemaText).byteLength;
+  if (schemaBytes > MAX_SCHEMA_TEXT_BYTES) {
+    return {
+      issues: [
+        {
+          message: "Schema is too large to validate (max 256 KiB).",
+          path: [],
+          severity: "error",
+          source: "schema",
+        },
+      ],
+      kind: "invalidSchema",
+    };
   }
 
   const schemaParsed = parser.parse(schemaText);

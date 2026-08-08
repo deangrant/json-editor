@@ -14,6 +14,35 @@ const formatter = new JsonFormatter();
 const repairer = new JsonRepairer();
 const transformEngine = new TransformEngine();
 
+/** Max compiled schema validators retained in the worker. */
+const SCHEMA_VALIDATOR_CACHE_MAX = 16;
+const schemaValidatorCache = new Map<string, SchemaValidator>();
+
+/**
+ * Returns a cached SchemaValidator for the schema, compiling on miss.
+ * @param schema JSON Schema object.
+ * @returns Compiled validator.
+ */
+function getSchemaValidator(schema: object): SchemaValidator {
+  const key = JSON.stringify(schema);
+  const cached = schemaValidatorCache.get(key);
+  if (cached) {
+    schemaValidatorCache.delete(key);
+    schemaValidatorCache.set(key, cached);
+    return cached;
+  }
+
+  const validator = new SchemaValidator(schema);
+  schemaValidatorCache.set(key, validator);
+  if (schemaValidatorCache.size > SCHEMA_VALIDATOR_CACHE_MAX) {
+    const oldest = schemaValidatorCache.keys().next().value;
+    if (oldest !== undefined) {
+      schemaValidatorCache.delete(oldest);
+    }
+  }
+  return validator;
+}
+
 type JobHandlers = {
   [K in WorkerJob["type"]]: (
     id: string,
@@ -79,7 +108,7 @@ const handlers: JobHandlers = {
         result: { issues: [], type: "validate" },
       };
     }
-    const validator = new SchemaValidator(job.schema);
+    const validator = getSchemaValidator(job.schema);
     return {
       id,
       ok: true,

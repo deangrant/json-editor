@@ -1,5 +1,5 @@
 import { detectValue } from "@json-editor/core/detect/value-detect.js";
-import { setAtPath } from "@json-editor/core/path/json-path.js";
+import { getAtPath, setAtPath } from "@json-editor/core/path/json-path.js";
 import type {
   JsonPath,
   JsonValue,
@@ -15,6 +15,10 @@ import {
 } from "react";
 
 import { useDocument } from "../../../hooks/use-document.js";
+import {
+  parseLeafValue,
+  stringifyLeafValue,
+} from "../../../utils/json-leaf-edit.js";
 import {
   flattenTree,
   pathKeyOf,
@@ -95,7 +99,8 @@ export function TreeView() {
       if (state.json === undefined) {
         return;
       }
-      setJson(setAtPath(state.json, path, parseLeaf(draft)));
+      const previous = getAtPath(state.json, path);
+      setJson(setAtPath(state.json, path, parseLeafValue(draft, previous)));
       setEditingPath(undefined);
     },
     [draft, setJson, state.json],
@@ -204,7 +209,7 @@ function TreeRowItem({
   const handleStartEdit = useCallback(() => {
     onSelect(row.path);
     onEdit(key);
-    onDraftChange(stringifyLeaf(row.value));
+    onDraftChange(stringifyLeafValue(row.value));
   }, [key, onDraftChange, onEdit, onSelect, row.path, row.value]);
 
   const handleStopEdit = useCallback(() => {
@@ -367,7 +372,7 @@ function TreeValue({
       onClick={onStartEdit}
       type="button"
     >
-      {stringifyLeaf(row.value)}
+      {stringifyLeafValue(row.value)}
     </button>
   );
 }
@@ -454,29 +459,4 @@ function valueClass(value: JsonValue): string {
     return styles.boolean ?? "";
   }
   return styles.meta ?? "";
-}
-
-/**
- * Stringifies a leaf value for editing.
- * @param value Leaf JSON value.
- * @returns Editable text.
- */
-function stringifyLeaf(value: JsonValue): string {
-  if (typeof value === "string") {
-    return value;
-  }
-  return JSON.stringify(value);
-}
-
-/**
- * Parses an edited leaf back into a JSON value.
- * @param text Draft text.
- * @returns Parsed value (falls back to string).
- */
-function parseLeaf(text: string): JsonValue {
-  try {
-    return JSON.parse(text) as JsonValue;
-  } catch {
-    return text;
-  }
 }

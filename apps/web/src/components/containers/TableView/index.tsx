@@ -2,13 +2,20 @@ import { getAtPath, setAtPath } from "@json-editor/core/path/json-path.js";
 import type { JsonValue } from "@json-editor/core/types/json.types.js";
 import {
   type ChangeEvent,
+  type KeyboardEvent,
   type UIEvent,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
 import { useDocument } from "../../../hooks/use-document.js";
+import {
+  parseLeafValue,
+  stringifyLeafValue,
+} from "../../../utils/json-leaf-edit.js";
 import { getVirtualWindow } from "../../../utils/virtual-window.js";
 import styles from "./index.module.css";
 
@@ -48,7 +55,8 @@ export function TableView() {
         return;
       }
       const path = [...table.rootPath, rowKey, column];
-      setJson(setAtPath(state.json, path, parseCell(text)));
+      const previous = getAtPath(state.json, path);
+      setJson(setAtPath(state.json, path, parseLeafValue(text, previous)));
     },
     [setJson, state.json, table],
   );
@@ -150,7 +158,7 @@ function TableRow({
 }
 
 /**
- * Editable table cell input.
+ * Editable table cell input with local draft until blur/Enter.
  * @param props Cell props.
  * @returns Table cell.
  */
@@ -165,19 +173,63 @@ function TableCell({
   value: JsonValue | undefined;
   onUpdateCell: (rowKey: string | number, column: string, text: string) => void;
 }) {
-  const handleChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      onUpdateCell(rowKey, column, event.target.value);
+  const committed = stringifyLeafValue(value);
+  const [draft, setDraft] = useState(committed);
+  const [focused, setFocused] = useState(false);
+  const draftRef = useRef(draft);
+  const skipCommitRef = useRef(false);
+  draftRef.current = draft;
+
+  useEffect(() => {
+    if (!focused) {
+      setDraft(committed);
+      draftRef.current = committed;
+    }
+  }, [committed, focused]);
+
+  const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const { value: next } = event.target;
+    draftRef.current = next;
+    setDraft(next);
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    setFocused(true);
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    setFocused(false);
+    if (skipCommitRef.current) {
+      skipCommitRef.current = false;
+      return;
+    }
+    onUpdateCell(rowKey, column, draftRef.current);
+  }, [column, onUpdateCell, rowKey]);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        event.currentTarget.blur();
+      }
+      if (event.key === "Escape") {
+        skipCommitRef.current = true;
+        draftRef.current = committed;
+        setDraft(committed);
+        event.currentTarget.blur();
+      }
     },
-    [column, onUpdateCell, rowKey],
+    [committed],
   );
 
   return (
     <td className={styles.td}>
       <input
         aria-label={`${String(rowKey)}.${column}`}
+        onBlur={handleBlur}
         onChange={handleChange}
-        value={stringifyCell(value)}
+        onFocus={handleFocus}
+        onKeyDown={handleKeyDown}
+        value={draft}
       />
     </td>
   );
@@ -295,35 +347,4 @@ function collectColumns(rows: Record<string, JsonValue>[]): string[] {
     }
   }
   return [...keys];
-}
-
-/**
- * Stringifies a cell value for an input.
- * @param value Cell value.
- * @returns Editable text.
- */
-function stringifyCell(value: JsonValue | undefined): string {
-  if (value === undefined) {
-    return "";
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  return JSON.stringify(value);
-}
-
-/**
- * Parses a cell input back to JSON.
- * @param text Input text.
- * @returns Parsed value.
- */
-function parseCell(text: string): JsonValue {
-  if (text === "") {
-    return "";
-  }
-  try {
-    return JSON.parse(text) as JsonValue;
-  } catch {
-    return text;
-  }
 }
