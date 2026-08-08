@@ -1,3 +1,4 @@
+import { LARGE_DOCUMENT_BYTES } from "@json-editor/core/constants.js";
 import { JsonFormatter } from "@json-editor/core/format/json-formatter.js";
 import { HistoryStack } from "@json-editor/core/history/history-stack.js";
 import { JsonParser } from "@json-editor/core/parse/json-parser.js";
@@ -6,6 +7,7 @@ import { TransformEngine } from "@json-editor/core/query/transform-engine.js";
 import type {
   JsonPath,
   JsonValue,
+  ParseError,
   ValidationIssue,
 } from "@json-editor/core/types/json.types.js";
 import { CompositeValidator } from "@json-editor/core/validate/composite-validator.js";
@@ -36,6 +38,9 @@ const formatter = new JsonFormatter();
 const parser = new JsonParser();
 const transformEngine = new TransformEngine();
 
+/** Debounce window for streaming text edits before worker parse. */
+const PARSE_DEBOUNCE_MS = 100;
+
 /**
  * Owns document state, history, worker jobs, and editor actions.
  * @returns Document context value for the provider.
@@ -52,11 +57,20 @@ export function useDocumentController(): DocumentContextValue {
     historyRef.current.push({ json: state.json, text: state.text });
   }
   const workerRef = useRef<WorkerClient | undefined>(undefined);
+  const parseGenerationRef = useRef(0);
+  const parseTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const parseBusyOwnerRef = useRef<number | undefined>(undefined);
   const [historyVersion, setHistoryVersion] = useState(0);
 
   useEffect(() => {
     workerRef.current = new WorkerClient();
     return () => {
+      if (parseTimerRef.current !== undefined) {
+        clearTimeout(parseTimerRef.current);
+      }
+      parseGenerationRef.current += 1;
       workerRef.current?.dispose();
     };
   }, []);
@@ -69,22 +83,111 @@ export function useDocumentController(): DocumentContextValue {
     [],
   );
 
-  const setText = useCallback(
-    (text: string) => {
-      dispatch({ text, type: "setText" });
-      const parsed = parser.parse(text);
-      pushHistory(text, parsed.ok ? parsed.value : undefined);
+  const invalidatePendingParse = useCallback(() => {
+    parseGenerationRef.current += 1;
+    if (parseTimerRef.current !== undefined) {
+      clearTimeout(parseTimerRef.current);
+      parseTimerRef.current = undefined;
+    }
+  }, []);
+
+  const runParse = useCallback(
+    async (text: string, generation: number) => {
+      const bytes = new TextEncoder().encode(text).byteLength;
+      const showBusy = bytes >= LARGE_DOCUMENT_BYTES;
+      if (showBusy) {
+        parseBusyOwnerRef.current = generation;
+        dispatch({ busy: true, type: "setWorkerBusy" });
+      }
+
+      try {
+        let json: JsonValue | undefined;
+        let parseError: ParseError | undefined;
+        const worker = workerRef.current;
+
+        if (worker) {
+          const response = await worker.run({ text, type: "parse" });
+          if (generation !== parseGenerationRef.current) {
+            return;
+          }
+          if (response.ok && response.result.type === "parse") {
+            json = response.result.value;
+          } else if (!response.ok) {
+            parseError = response.parseError;
+          }
+        } else {
+          const parsed = parser.parse(text);
+          if (generation !== parseGenerationRef.current) {
+            return;
+          }
+          if (parsed.ok) {
+            json = parsed.value;
+          } else {
+            parseError = parsed.error;
+          }
+        }
+
+        dispatch({
+          json,
+          parseError,
+          text,
+          type: "applyParseResult",
+        });
+        pushHistory(text, json);
+      } finally {
+        if (parseBusyOwnerRef.current === generation) {
+          parseBusyOwnerRef.current = undefined;
+          dispatch({ busy: false, type: "setWorkerBusy" });
+        }
+      }
     },
     [pushHistory],
   );
 
+  const scheduleParse = useCallback(
+    (text: string) => {
+      parseGenerationRef.current += 1;
+      const generation = parseGenerationRef.current;
+      if (parseTimerRef.current !== undefined) {
+        clearTimeout(parseTimerRef.current);
+      }
+      parseTimerRef.current = setTimeout(() => {
+        parseTimerRef.current = undefined;
+        void runParse(text, generation);
+      }, PARSE_DEBOUNCE_MS);
+    },
+    [runParse],
+  );
+
+  const parseNow = useCallback(
+    (text: string) => {
+      parseGenerationRef.current += 1;
+      const generation = parseGenerationRef.current;
+      if (parseTimerRef.current !== undefined) {
+        clearTimeout(parseTimerRef.current);
+        parseTimerRef.current = undefined;
+      }
+      return runParse(text, generation);
+    },
+    [runParse],
+  );
+
+  const setText = useCallback(
+    (text: string) => {
+      dispatch({ text, type: "setText" });
+      scheduleParse(text);
+    },
+    [scheduleParse],
+  );
+
   const setJson = useCallback(
     (json: JsonValue) => {
+      invalidatePendingParse();
       const text = formatter.beautify(json);
       dispatch({ json, text, type: "setJson" });
       pushHistory(text, json);
     },
-    [pushHistory],
+    [invalidatePendingParse, pushHistory],
   );
 
   const setMode = useCallback((mode: EditorMode) => {
@@ -117,14 +220,9 @@ export function useDocumentController(): DocumentContextValue {
       return;
     }
     dispatch({ fileName: file.fileName, text: file.text, type: "load" });
-    const parsed = parser.parse(file.text);
     historyRef.current?.clear();
-    historyRef.current?.push({
-      json: parsed.ok ? parsed.value : undefined,
-      text: file.text,
-    });
-    setHistoryVersion((version) => version + 1);
-  }, []);
+    await parseNow(file.text);
+  }, [parseNow]);
 
   const saveFile = useCallback(() => {
     saveJsonFile(state.text, state.fileName ?? "document.json");
@@ -263,18 +361,20 @@ export function useDocumentController(): DocumentContextValue {
     if (!snapshot) {
       return;
     }
+    invalidatePendingParse();
     dispatch({ snapshot, type: "restoreSnapshot" });
     setHistoryVersion((version) => version + 1);
-  }, []);
+  }, [invalidatePendingParse]);
 
   const redo = useCallback(() => {
     const snapshot = historyRef.current?.redo();
     if (!snapshot) {
       return;
     }
+    invalidatePendingParse();
     dispatch({ snapshot, type: "restoreSnapshot" });
     setHistoryVersion((version) => version + 1);
-  }, []);
+  }, [invalidatePendingParse]);
 
   const applyTransform = useCallback(
     async (program: TransformProgram) => {

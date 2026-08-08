@@ -70,4 +70,10 @@ export type DocumentAction =
       readonly preview: string | undefined;
     }
   | { readonly type: "markSaved" }
-  | { readonly type: "restoreSnapshot"; readonly snapshot: DocumentSnapshot };
+  | { readonly type: "restoreSnapshot"; readonly snapshot: DocumentSnapshot }
+  | {
+      readonly type: "applyParseResult";
+      readonly text: string;
+      readonly json: JsonValue | undefined;
+      readonly parseError: ParseError | undefined;
+    };

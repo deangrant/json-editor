@@ -3,12 +3,10 @@ import {
   LARGE_DOCUMENT_BYTES,
 } from "@json-editor/core/constants.js";
 import { JsonFormatter } from "@json-editor/core/format/json-formatter.js";
-import { JsonParser } from "@json-editor/core/parse/json-parser.js";
 
 import { DEFAULT_DOCUMENT } from "../constants/app.constants.js";
 import type { DocumentAction, DocumentState } from "../types/document.types.js";
 
-const parser = new JsonParser();
 const formatter = new JsonFormatter();
 
 /**
@@ -49,13 +47,12 @@ export function documentReducer(
 ): DocumentState {
   switch (action.type) {
     case "load": {
-      const parsed = parser.parse(action.text);
       return {
         ...state,
         dirty: false,
         fileName: action.fileName,
-        json: parsed.ok ? parsed.value : undefined,
-        parseError: parsed.ok ? undefined : parsed.error,
+        json: undefined,
+        parseError: undefined,
         repairSuggestion: undefined,
         selection: [],
         sizeWarning: sizeWarningFor(action.text),
@@ -63,12 +60,11 @@ export function documentReducer(
       };
     }
     case "setText": {
-      const parsed = parser.parse(action.text);
       return {
         ...state,
         dirty: true,
-        json: parsed.ok ? parsed.value : undefined,
-        parseError: parsed.ok ? undefined : parsed.error,
+        json: undefined,
+        parseError: undefined,
         repairSuggestion: undefined,
         sizeWarning: sizeWarningFor(action.text),
         text: action.text,
@@ -111,14 +107,23 @@ export function documentReducer(
     case "markSaved":
       return { ...state, dirty: false };
     case "restoreSnapshot": {
-      const parsed = parser.parse(action.snapshot.text);
       return {
         ...state,
         dirty: true,
-        json: parsed.ok ? parsed.value : action.snapshot.json,
-        parseError: parsed.ok ? undefined : parsed.error,
+        json: action.snapshot.json,
+        parseError: undefined,
         sizeWarning: sizeWarningFor(action.snapshot.text),
         text: action.snapshot.text,
+      };
+    }
+    case "applyParseResult": {
+      if (action.text !== state.text) {
+        return state;
+      }
+      return {
+        ...state,
+        json: action.json,
+        parseError: action.parseError,
       };
     }
     default: {
