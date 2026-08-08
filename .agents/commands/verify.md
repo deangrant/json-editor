@@ -1,8 +1,8 @@
 # Verify (pre-merge)
 
-Run the same checks as the CI Lint and Dependency Audit workflows (Biome,
-lockfile, React Doctor, and `pnpm audit`) plus typecheck and
-the test suite before merge or PR sign-off.
+Run the same checks as the CI Lint, Test, and Dependency Audit workflows
+(Biome, lockfile, React Doctor, typecheck, tests, and `pnpm audit`) before
+merge or PR sign-off.
 
 Prefer the root script when available:
 
@@ -50,18 +50,19 @@ pnpm run build
 - CI Lint runs two jobs: **lint** (Biome, lockfile) and
   **react-doctor** (`blocking: error`). See
   [`.github/workflows/lint.yml`](../../.github/workflows/lint.yml).
+- CI Test runs typecheck then the Vitest suite. See
+  [`.github/workflows/test.yml`](../../.github/workflows/test.yml).
 - Dependency Audit runs `pnpm audit` as a hard fail (any advisory fails the
   job). See [`.github/workflows/audit.yml`](../../.github/workflows/audit.yml).
 - Biome step matches `biome ci .` in the lint job (local `pnpm run check` is
   the developer equivalent).
-- Typecheck uses the recursive `pnpm run typecheck` (`pnpm -r typecheck`);
-  catches incomplete locale wiring and cross-file type errors before merge.
+- Typecheck matches the Test workflow **Typecheck** step
+  (`pnpm run typecheck` / `pnpm -r typecheck`).
 - Lockfile validation matches **Validate lockfile**.
 - `pnpm audit` matches the Dependency Audit **Run pnpm audit** step.
 - `pnpm run doctor:changed` mirrors the **react-doctor** job locally (new
   issues vs base; see skill for flags and triage).
-- Tests are not in the lint workflow but are standard pre-merge guard for this
-  repo.
+- `pnpm test` matches the Test workflow **Run tests** step.
 
 Report each command and exit code. If any fail, stop and fix before claiming ready.
 
