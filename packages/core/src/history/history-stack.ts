@@ -2,7 +2,7 @@ import type { IHistoryStack } from "./i-history-stack.js";
 
 /**
  * In-memory undo/redo stack with a maximum depth.
- * @typeParam T Snapshot type stored in the stack.
+ * @typeparam T Snapshot type stored in the stack.
  */
 export class HistoryStack<T> implements IHistoryStack<T> {
   private past: T[] = [];
@@ -17,12 +17,18 @@ export class HistoryStack<T> implements IHistoryStack<T> {
     this.maxDepth = maxDepth;
   }
 
-  /** @inheritdoc */
+  /**
+   * Returns whether an undo operation is available.
+   * @returns True when at least one undo snapshot exists.
+   */
   canUndo(): boolean {
     return this.past.length > 0;
   }
 
-  /** @inheritdoc */
+  /**
+   * Returns whether a redo operation is available.
+   * @returns True when at least one redo snapshot exists.
+   */
   canRedo(): boolean {
     return this.future.length > 0;
   }
@@ -78,12 +84,15 @@ export class HistoryStack<T> implements IHistoryStack<T> {
     return this.present;
   }
 
-  /** Current snapshot, if any. */
+  /**
+   * Returns the current snapshot, if any.
+   * @returns Present snapshot, or `undefined` when empty.
+   */
   current(): T | undefined {
     return this.present;
   }
 
-  /** Clears all history. */
+  /** Clears all past, present, and future snapshots. */
   clear(): void {
     this.past = [];
     this.present = undefined;

@@ -9,7 +9,9 @@ const parser = new JsonParser();
 
 /** Outcome of a document text parse attempt. */
 export interface ParseOutcome {
+  /** Parsed JSON value when parse succeeded. */
   readonly json: JsonValue | undefined;
+  /** Parse failure details when parse failed. */
   readonly parseError: ParseError | undefined;
 }
 

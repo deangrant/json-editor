@@ -5,11 +5,17 @@ import type {
 
 /** One visible row in the flattened tree. */
 export interface TreeRow {
+  /** Nesting depth from the document root. */
   readonly depth: number;
+  /** Whether the value can be expanded (object or array). */
   readonly expandable: boolean;
+  /** Whether children of this row are currently visible. */
   readonly expanded: boolean;
+  /** Property key or array index for this row, if any. */
   readonly key: string | number | undefined;
+  /** Path from the document root to this value. */
   readonly path: JsonPath;
+  /** JSON value rendered by this row. */
   readonly value: JsonValue;
 }
 

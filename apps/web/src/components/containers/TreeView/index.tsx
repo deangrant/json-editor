@@ -19,7 +19,7 @@ import {
   useState,
 } from "react";
 
-import { useDocument } from "../../../hooks/use-document.js";
+import { useDocumentState } from "../../../hooks/use-document.js";
 import {
   parseLeafValue,
   stringifyLeafValue,
@@ -30,8 +30,7 @@ import {
   type TreeRow,
 } from "../../../utils/tree-flatten.js";
 import { getVirtualWindow } from "../../../utils/virtual-window.js";
-import { ColorPickerPopover } from "../ColorPickerPopover/index.js";
-import { TimestampPopover } from "../TimestampPopover/index.js";
+import { ColorPickerPopover, TimestampPopover } from "../../patterns/index.js";
 import styles from "./index.module.css";
 
 const ROW_HEIGHT = 34;
@@ -41,7 +40,7 @@ const ROW_HEIGHT = 34;
  * @returns Tree mode view.
  */
 export function TreeView() {
-  const { state, setJson, setSelection } = useDocument();
+  const { state, setJson, setSelection } = useDocumentState();
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set([pathKeyOf([])]),
   );

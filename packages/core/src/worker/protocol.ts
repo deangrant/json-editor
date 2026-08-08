@@ -28,7 +28,9 @@ export type WorkerJob =
 
 /** Request envelope sent to the worker. */
 export interface WorkerRequest {
+  /** Correlation id matched on the response. */
   readonly id: string;
+  /** Job payload executed by the worker. */
   readonly job: WorkerJob;
 }
 

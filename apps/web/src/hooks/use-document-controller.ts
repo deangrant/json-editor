@@ -1,8 +1,6 @@
 import { LARGE_DOCUMENT_BYTES } from "@json-editor/core/constants.js";
-import { JsonFormatter } from "@json-editor/core/format/json-formatter.js";
-import { HistoryStack } from "@json-editor/core/history/history-stack.js";
+import type { IHistoryStack } from "@json-editor/core/history/i-history-stack.js";
 import type { TransformProgram } from "@json-editor/core/query/transform.types.js";
-import { TransformEngine } from "@json-editor/core/query/transform-engine.js";
 import type {
   JsonPath,
   JsonValue,
@@ -18,8 +16,6 @@ import {
 } from "react";
 
 import type { DocumentContextValue } from "../contexts/document-context.js";
-import { openJsonFile, saveJsonFile } from "../services/file-io.js";
-import { WorkerClient } from "../services/worker-client.js";
 import {
   createInitialState,
   documentReducer,
@@ -31,6 +27,11 @@ import type {
 } from "../types/document.types.js";
 import { createBannedFlagValidator } from "../utils/custom-validators.js";
 import { runPromise } from "../utils/run-promise.js";
+import {
+  createDefaultDocumentControllerDeps,
+  type DocumentControllerDeps,
+  type WorkerPort,
+} from "./document-controller/deps.js";
 import { decideHistoryWrite } from "./document-controller/history-policy.js";
 import {
   outcomeFromLocalParse,
@@ -39,31 +40,37 @@ import {
 } from "./document-controller/parse-outcomes.js";
 import { collectSchemaIssues } from "./document-controller/schema-validation.js";
 
-const formatter = new JsonFormatter();
-const transformEngine = new TransformEngine();
-
 /** Debounce window for streaming text edits before worker parse. */
 const PARSE_DEBOUNCE_MS = 100;
 
 /** Coalesce window for rapid history snapshots (typing / table edits). */
 const HISTORY_COALESCE_MS = 500;
 
+const defaultDeps = createDefaultDocumentControllerDeps();
+
 /**
  * Owns document state, history, worker jobs, and editor actions.
+ * @param deps Optional collaborators; defaults to production adapters.
  * @returns Document context value for the provider.
  */
-export function useDocumentController(): DocumentContextValue {
+export function useDocumentController(
+  deps: DocumentControllerDeps = defaultDeps,
+): DocumentContextValue {
+  const { formatter, transformEngine, fileIo } = deps;
+  const depsRef = useRef(deps);
+  depsRef.current = deps;
+
   const [state, dispatch] = useReducer(
     documentReducer,
     undefined,
     createInitialState,
   );
-  const historyRef = useRef<HistoryStack<DocumentSnapshot> | null>(null);
+  const historyRef = useRef<IHistoryStack<DocumentSnapshot> | null>(null);
   if (historyRef.current === null) {
-    historyRef.current = new HistoryStack<DocumentSnapshot>(100);
+    historyRef.current = deps.createHistory();
     historyRef.current.push({ json: state.json, text: state.text });
   }
-  const workerRef = useRef<WorkerClient | undefined>(undefined);
+  const workerRef = useRef<WorkerPort | undefined>(undefined);
   const parseGenerationRef = useRef(0);
   const parseTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -75,7 +82,7 @@ export function useDocumentController(): DocumentContextValue {
   const [historyVersion, setHistoryVersion] = useState(0);
 
   useEffect(() => {
-    workerRef.current = new WorkerClient();
+    workerRef.current = depsRef.current.createWorker();
     return () => {
       if (parseTimerRef.current !== undefined) {
         clearTimeout(parseTimerRef.current);
@@ -231,7 +238,7 @@ export function useDocumentController(): DocumentContextValue {
       dispatch({ json, text, type: "setJson" });
       pushHistory(text, json);
     },
-    [invalidatePendingParse, pushHistory],
+    [formatter, invalidatePendingParse, pushHistory],
   );
 
   const setMode = useCallback((mode: EditorMode) => {
@@ -259,7 +266,7 @@ export function useDocumentController(): DocumentContextValue {
   }, []);
 
   const openFile = useCallback(async () => {
-    const file = await openJsonFile();
+    const file = await fileIo.openJsonFile();
     if (!file) {
       return;
     }
@@ -268,12 +275,12 @@ export function useDocumentController(): DocumentContextValue {
     lastHistoryPushAtRef.current = 0;
     setHistoryVersion((version) => version + 1);
     await parseNow(file.text);
-  }, [parseNow]);
+  }, [fileIo, parseNow]);
 
   const saveFile = useCallback(() => {
-    saveJsonFile(state.text, state.fileName ?? "document.json");
+    fileIo.saveJsonFile(state.text, state.fileName ?? "document.json");
     dispatch({ type: "markSaved" });
-  }, [state.fileName, state.text]);
+  }, [fileIo, state.fileName, state.text]);
 
   const runFormat = useCallback(
     async (mode: "beautify" | "compact") => {
@@ -316,7 +323,7 @@ export function useDocumentController(): DocumentContextValue {
         endWorkerJob();
       }
     },
-    [beginWorkerJob, endWorkerJob, pushHistory, state],
+    [beginWorkerJob, endWorkerJob, formatter, pushHistory, state],
   );
 
   const format = useCallback(async () => {
@@ -370,6 +377,7 @@ export function useDocumentController(): DocumentContextValue {
       const schemaResult = await collectSchemaIssues(
         json,
         schemaText.trim(),
+        depsRef.current.createParser(),
         workerRef.current,
       );
       if (jobId !== workerJobIdRef.current) {
@@ -453,7 +461,7 @@ export function useDocumentController(): DocumentContextValue {
         endWorkerJob();
       }
     },
-    [beginWorkerJob, endWorkerJob, setJson, state],
+    [beginWorkerJob, endWorkerJob, setJson, state, transformEngine],
   );
 
   const previewTransform = useCallback(
@@ -472,7 +480,7 @@ export function useDocumentController(): DocumentContextValue {
       });
       return Promise.resolve();
     },
-    [state.json],
+    [formatter, state.json, transformEngine],
   );
 
   const replaceInText = useCallback(

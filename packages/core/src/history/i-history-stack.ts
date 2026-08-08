@@ -1,17 +1,27 @@
 /**
  * Undo/redo stack for document snapshots.
- * @typeParam T Snapshot type stored in the stack.
+ * @typeparam T Snapshot type stored in the stack.
  */
 export interface IHistoryStack<T> {
-  /** Whether a redo operation is available. */
+  /**
+   * Returns whether a redo operation is available.
+   * @returns True when at least one redo snapshot exists.
+   */
   canRedo: () => boolean;
-  /** Whether an undo operation is available. */
+
+  /**
+   * Returns whether an undo operation is available.
+   * @returns True when at least one undo snapshot exists.
+   */
   canUndo: () => boolean;
 
   /** Clears all history. */
   clear: () => void;
 
-  /** Current snapshot, if any. */
+  /**
+   * Returns the current snapshot, if any.
+   * @returns Present snapshot, or `undefined` when empty.
+   */
   current: () => T | undefined;
 
   /**

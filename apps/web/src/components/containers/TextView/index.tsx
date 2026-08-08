@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { useDocument } from "../../../hooks/use-document.js";
+import { useDocumentState } from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
 import {
   fullDocumentReplaceSpec,
@@ -22,7 +22,7 @@ interface CodeMirrorView {
  * @returns Text mode view.
  */
 export function TextView() {
-  const { state, setText } = useDocument();
+  const { state, setText } = useDocumentState();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<CodeMirrorView | null>(null);
   const setTextRef = useRef(setText);

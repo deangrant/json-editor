@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 
-import { useDocument } from "../../../hooks/use-document.js";
+import { useDocumentState } from "../../../hooks/use-document.js";
 import {
   parseLeafValue,
   stringifyLeafValue,
@@ -26,7 +26,7 @@ const ROW_HEIGHT = 36;
  * @returns Table mode view.
  */
 export function TableView() {
-  const { state, setJson } = useDocument();
+  const { state, setJson } = useDocumentState();
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(480);
 

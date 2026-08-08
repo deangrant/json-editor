@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 
-import { useDocument } from "./use-document.js";
+import { useDocumentHistory } from "./use-document.js";
 
 /**
  * Binds Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z to document undo/redo in all modes.
  */
 export function useHistoryShortcuts(): void {
-  const { undo, redo } = useDocument();
+  const { undo, redo } = useDocumentHistory();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

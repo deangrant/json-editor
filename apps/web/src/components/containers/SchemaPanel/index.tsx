@@ -1,9 +1,12 @@
 import { type ChangeEvent, useCallback } from "react";
 
-import { useDocument } from "../../../hooks/use-document.js";
+import {
+  useDocumentSchema,
+  useDocumentState,
+} from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
-import { Button } from "../../core/Button/index.js";
-import { ValidationList } from "../../patterns/ValidationList/index.js";
+import { Button } from "../../core/index.js";
+import { ValidationList } from "../../patterns/index.js";
 import styles from "./index.module.css";
 
 /**
@@ -11,7 +14,8 @@ import styles from "./index.module.css";
  * @returns Schema panel.
  */
 export function SchemaPanel() {
-  const { state, setSchemaText, setSelection, validate } = useDocument();
+  const { state, setSelection } = useDocumentState();
+  const { setSchemaText, validate } = useDocumentSchema();
 
   const handleSchemaChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {

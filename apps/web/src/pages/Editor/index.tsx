@@ -1,18 +1,25 @@
 import { lazy, type ReactNode, Suspense, useCallback } from "react";
 
-import { EditorToolbar } from "../../components/containers/EditorToolbar/index.js";
-import { SchemaPanel } from "../../components/containers/SchemaPanel/index.js";
-import { TableView } from "../../components/containers/TableView/index.js";
-import { TransformPanel } from "../../components/containers/TransformPanel/index.js";
-import { TreeView } from "../../components/containers/TreeView/index.js";
-import { EditorLayout } from "../../components/layouts/EditorLayout/index.js";
-import { SearchReplaceBar } from "../../components/patterns/SearchReplaceBar/index.js";
-import { StatusBar } from "../../components/patterns/StatusBar/index.js";
-import { useDocument } from "../../hooks/use-document.js";
+import {
+  EditorToolbar,
+  SchemaPanel,
+  TableView,
+  TransformPanel,
+  TreeView,
+} from "../../components/containers/index.js";
+import { EditorLayout } from "../../components/layouts/index.js";
+import {
+  SearchReplaceBar,
+  StatusBar,
+} from "../../components/patterns/index.js";
+import {
+  useDocumentSearch,
+  useDocumentState,
+} from "../../hooks/use-document.js";
 import { useHistoryShortcuts } from "../../hooks/use-history-shortcuts.js";
 
 const TextView = lazy(async () => {
-  const module = await import("../../components/containers/TextView/index.js");
+  const module = await import("../../components/containers/index.js");
   return { default: module.TextView };
 });
 
@@ -21,8 +28,9 @@ const TextView = lazy(async () => {
  * @returns Editor page.
  */
 export function EditorPage() {
-  const { state, setSearchQuery, setReplaceValue, replaceInText } =
-    useDocument();
+  const { state } = useDocumentState();
+  const { setSearchQuery, setReplaceValue, replaceInText } =
+    useDocumentSearch();
   useHistoryShortcuts();
 
   const handleReplace = useCallback(() => {

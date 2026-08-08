@@ -1,13 +1,11 @@
-import { JsonParser } from "@json-editor/core/parse/json-parser.js";
+import type { IJsonParser } from "@json-editor/core/parse/i-json-parser.js";
 import type {
   JsonValue,
   ValidationIssue,
 } from "@json-editor/core/types/json.types.js";
 import type { WorkerResponse } from "@json-editor/core/worker/protocol.js";
 
-import type { WorkerClient } from "../../services/worker-client.js";
-
-const parser = new JsonParser();
+import type { WorkerPort } from "./deps.js";
 
 /** Maximum schema text size accepted for validation jobs. */
 const MAX_SCHEMA_TEXT_BYTES = 256 * 1024;
@@ -59,13 +57,15 @@ function schemaIssuesFromWorkerResponse(
  * Parses schema text and optionally validates `json` via the worker.
  * @param json Document value to validate.
  * @param schemaText Trimmed schema JSON text.
- * @param worker Optional worker client.
+ * @param parser JSON parser used for schema text.
+ * @param worker Optional worker port for schema validation jobs.
  * @returns Invalid-schema terminal issues, or collected schema issues.
  */
 export async function collectSchemaIssues(
   json: JsonValue,
   schemaText: string,
-  worker: WorkerClient | undefined,
+  parser: IJsonParser,
+  worker: WorkerPort | undefined,
 ): Promise<SchemaIssueCollection> {
   if (schemaText.length === 0) {
     return { issues: [], kind: "issues" };

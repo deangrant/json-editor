@@ -1,10 +1,15 @@
 import { useCallback } from "react";
 
-import { useDocument } from "../../../hooks/use-document.js";
+import {
+  useDocumentFile,
+  useDocumentFormat,
+  useDocumentHistory,
+  useDocumentSchema,
+  useDocumentState,
+} from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
-import { Button } from "../../core/Button/index.js";
-import { Toolbar } from "../../core/Toolbar/index.js";
-import { ModeSwitch } from "../../patterns/ModeSwitch/index.js";
+import { Button, Toolbar } from "../../core/index.js";
+import { ModeSwitch } from "../../patterns/index.js";
 import styles from "./index.module.css";
 
 /**
@@ -12,22 +17,11 @@ import styles from "./index.module.css";
  * @returns Editor toolbar.
  */
 export function EditorToolbar() {
-  const {
-    state,
-    canUndo,
-    canRedo,
-    setMode,
-    setSidePanel,
-    openFile,
-    saveFile,
-    format,
-    compact,
-    repair,
-    acceptRepair,
-    validate,
-    undo,
-    redo,
-  } = useDocument();
+  const { state, setMode, setSidePanel } = useDocumentState();
+  const { canUndo, canRedo, undo, redo } = useDocumentHistory();
+  const { openFile, saveFile } = useDocumentFile();
+  const { format, compact, repair, acceptRepair } = useDocumentFormat();
+  const { validate } = useDocumentSchema();
 
   const handleOpen = useCallback(() => {
     runPromise(openFile());

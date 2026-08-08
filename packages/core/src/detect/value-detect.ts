@@ -1,13 +1,18 @@
 /** Detected `#RGB` or `#RRGGBB` color string. */
 export interface ColorDetection {
+  /** Normalized `#rrggbb` color string. */
   readonly hex: string;
+  /** Discriminant for color detections. */
   readonly kind: "color";
 }
 
 /** Detected unix timestamp in seconds or milliseconds. */
 export interface TimestampDetection {
+  /** Timestamp converted to epoch milliseconds. */
   readonly epochMs: number;
+  /** Discriminant for timestamp detections. */
   readonly kind: "timestamp";
+  /** Original unit inferred from the numeric magnitude. */
   readonly unit: "s" | "ms";
 }
 

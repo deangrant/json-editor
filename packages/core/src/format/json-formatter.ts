@@ -16,7 +16,7 @@ export class JsonFormatter implements IJsonFormatter {
   }
 
   /**
-   * Compact JSON with no extra whitespace.
+   * Compacts JSON with no extra whitespace.
    * @param value Parsed JSON value.
    * @returns Compact JSON text.
    */

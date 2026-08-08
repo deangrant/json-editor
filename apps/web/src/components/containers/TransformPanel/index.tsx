@@ -5,11 +5,12 @@ import type {
 } from "@json-editor/core/query/transform.types.js";
 import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 
-import { useDocument } from "../../../hooks/use-document.js";
+import {
+  useDocumentState,
+  useDocumentTransform,
+} from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
-import { Button } from "../../core/Button/index.js";
-import { Input } from "../../core/Input/index.js";
-import { Select } from "../../core/Select/index.js";
+import { Button, Input, Select } from "../../core/index.js";
 import styles from "./index.module.css";
 
 const NUMERIC_SEGMENT = /^\d+$/;
@@ -30,7 +31,8 @@ const OPERATORS: { label: string; value: FilterOperator }[] = [
  * @returns Transform panel.
  */
 export function TransformPanel() {
-  const { state, previewTransform, applyTransform } = useDocument();
+  const { state } = useDocumentState();
+  const { previewTransform, applyTransform } = useDocumentTransform();
   const [rootPathText, setRootPathText] = useState("items");
   const [filterField, setFilterField] = useState("active");
   const [filterOperator, setFilterOperator] = useState<FilterOperator>("eq");

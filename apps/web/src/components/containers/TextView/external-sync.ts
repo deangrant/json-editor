@@ -1,5 +1,5 @@
 /**
- * Whether the CodeMirror document should be replaced from app state.
+ * Returns whether the CodeMirror document should be replaced from app state.
  * @param current Editor document text.
  * @param next Document controller text.
  * @returns True when the editor is out of sync.
