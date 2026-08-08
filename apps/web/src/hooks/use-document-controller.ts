@@ -11,6 +11,7 @@ import type {
   ValidationIssue,
 } from "@json-editor/core/types/json.types.js";
 import { CompositeValidator } from "@json-editor/core/validate/composite-validator.js";
+import type { WorkerResponse } from "@json-editor/core/worker/protocol.js";
 import {
   useCallback,
   useEffect,
@@ -33,6 +34,7 @@ import type {
   SidePanel,
 } from "../types/document.types.js";
 import { createBannedFlagValidator } from "../utils/custom-validators.js";
+import { runPromise } from "../utils/run-promise.js";
 
 const formatter = new JsonFormatter();
 const parser = new JsonParser();
@@ -40,6 +42,44 @@ const transformEngine = new TransformEngine();
 
 /** Debounce window for streaming text edits before worker parse. */
 const PARSE_DEBOUNCE_MS = 100;
+
+/** Outcome of a document text parse attempt. */
+interface ParseOutcome {
+  readonly json: JsonValue | undefined;
+  readonly parseError: ParseError | undefined;
+}
+
+/**
+ * Maps a worker parse response into a document parse outcome.
+ * @param response Worker response for a parse job.
+ * @returns Parsed value or parse error fields for the reducer.
+ */
+function outcomeFromWorkerParseResponse(
+  response: WorkerResponse,
+): ParseOutcome {
+  if (response.ok && response.result.type === "parse") {
+    return { json: response.result.value, parseError: undefined };
+  }
+  if (!response.ok) {
+    const { parseError } = response;
+    return { json: undefined, parseError };
+  }
+  return { json: undefined, parseError: undefined };
+}
+
+/**
+ * Parses text on the main thread when no worker is available.
+ * @param text Document text to parse.
+ * @returns Parsed value or parse error fields for the reducer.
+ */
+function outcomeFromLocalParse(text: string): ParseOutcome {
+  const parsed = parser.parse(text);
+  if (parsed.ok) {
+    return { json: parsed.value, parseError: undefined };
+  }
+  const { error: parseError } = parsed;
+  return { json: undefined, parseError };
+}
 
 /**
  * Owns document state, history, worker jobs, and editor actions.
@@ -101,32 +141,22 @@ export function useDocumentController(): DocumentContextValue {
       }
 
       try {
-        let json: JsonValue | undefined;
-        let parseError: ParseError | undefined;
         const worker = workerRef.current;
-
+        let outcome: ParseOutcome;
         if (worker) {
           const response = await worker.run({ text, type: "parse" });
           if (generation !== parseGenerationRef.current) {
             return;
           }
-          if (response.ok && response.result.type === "parse") {
-            json = response.result.value;
-          } else if (!response.ok) {
-            parseError = response.parseError;
-          }
+          outcome = outcomeFromWorkerParseResponse(response);
         } else {
-          const parsed = parser.parse(text);
+          outcome = outcomeFromLocalParse(text);
           if (generation !== parseGenerationRef.current) {
             return;
           }
-          if (parsed.ok) {
-            json = parsed.value;
-          } else {
-            parseError = parsed.error;
-          }
         }
 
+        const { json, parseError } = outcome;
         dispatch({
           json,
           parseError,
@@ -153,7 +183,7 @@ export function useDocumentController(): DocumentContextValue {
       }
       parseTimerRef.current = setTimeout(() => {
         parseTimerRef.current = undefined;
-        void runParse(text, generation);
+        runPromise(runParse(text, generation));
       }, PARSE_DEBOUNCE_MS);
     },
     [runParse],
