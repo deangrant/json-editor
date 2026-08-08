@@ -371,6 +371,15 @@ export function useDocumentController(): DocumentContextValue {
           });
           if (response.ok && response.result.type === "validate") {
             schemaIssues = response.result.issues;
+          } else if (!response.ok) {
+            schemaIssues = [
+              {
+                message: `Schema validation failed: ${response.error}`,
+                path: [],
+                severity: "error",
+                source: "schema",
+              },
+            ];
           }
         }
       }
