@@ -16,7 +16,7 @@ export interface TreeRow {
 /**
  * Flattens a JSON tree into visible rows based on expansion state.
  * @param root Document root.
- * @param expanded Paths that are expanded (joined with `\u0001`).
+ * @param expanded Paths that are expanded (`JSON.stringify` path keys).
  * @returns Visible tree rows.
  */
 export function flattenTree(
@@ -69,11 +69,12 @@ export function flattenTree(
 
 /**
  * Serializes a path for use as a set key.
+ * Uses `JSON.stringify` so number indices and string keys cannot collide.
  * @param path JSON path.
  * @returns Stable path key.
  */
 export function pathKeyOf(path: JsonPath): string {
-  return path.map(String).join("\u0001");
+  return JSON.stringify(path);
 }
 
 /**

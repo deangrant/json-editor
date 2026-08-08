@@ -44,10 +44,12 @@ export function getAtPath(
 /**
  * Returns a deep clone of `root` with `value` written at `path`.
  * Missing object parents are created; array parents must already exist.
+ * Array indices must be integers in `0..length` (inclusive for append).
  * @param root Document root.
  * @param path Path from the root.
  * @param value Value to write.
  * @returns Updated document root.
+ * @throws If an array index is negative, non-integer, or greater than length.
  */
 export function setAtPath(
   root: JsonValue,
@@ -107,6 +109,7 @@ export function deleteAtPath(root: JsonValue, path: JsonPath): JsonValue {
  * @param fromKey Existing key.
  * @param toKey New key.
  * @returns Updated document root.
+ * @throws If `toKey` already exists on the parent object.
  */
 export function renameKey(
   root: JsonValue,
@@ -132,6 +135,10 @@ export function renameKey(
 
   if (!(fromKey in parent)) {
     return clone;
+  }
+
+  if (toKey in parent) {
+    throw new Error(`Cannot rename to existing key "${toKey}".`);
   }
 
   const value = parent[fromKey];
@@ -203,6 +210,7 @@ function descendForWrite(
     if (!Array.isArray(current)) {
       throw new Error(`Expected array at segment ${String(segment)}.`);
     }
+    assertWritableArrayIndex(segment, current.length);
     const child = current[segment] ?? emptyChild;
     current[segment] = child;
     return child;
@@ -240,6 +248,7 @@ function writeLeaf(
     if (!Array.isArray(current)) {
       throw new Error("Expected array at write target.");
     }
+    assertWritableArrayIndex(last, current.length);
     current[last] = value;
     return;
   }
@@ -253,4 +262,17 @@ function writeLeaf(
   }
 
   current[last] = value;
+}
+
+/**
+ * Ensures an array index is a non-negative integer within `0..length`.
+ * @param index Candidate array index.
+ * @param length Current array length.
+ */
+function assertWritableArrayIndex(index: number, length: number): void {
+  if (!Number.isInteger(index) || index < 0 || index > length) {
+    throw new Error(
+      `Array index ${String(index)} is out of range for length ${String(length)}.`,
+    );
+  }
 }

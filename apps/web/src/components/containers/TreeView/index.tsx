@@ -37,7 +37,9 @@ const ROW_HEIGHT = 34;
  */
 export function TreeView() {
   const { state, setJson, setSelection } = useDocument();
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set([""]));
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set([pathKeyOf([])]),
+  );
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(480);
   const [editingPath, setEditingPath] = useState<string | undefined>();

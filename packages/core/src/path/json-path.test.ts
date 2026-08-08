@@ -21,6 +21,23 @@ describe("jsonPath", () => {
     expect(getAtPath(root, ["a", "b", 0])).toBe(1);
   });
 
+  it("appends at array length", () => {
+    const next = setAtPath(root, ["a", "b", 3], 4);
+    expect(getAtPath(next, ["a", "b"])).toEqual([1, 2, { c: 3 }, 4]);
+  });
+
+  it("rejects array indices beyond length", () => {
+    expect(() => setAtPath(root, ["a", "b", 4], 9)).toThrow("out of range");
+  });
+
+  it("rejects negative array indices", () => {
+    expect(() => setAtPath(root, ["a", "b", -1], 9)).toThrow("out of range");
+  });
+
+  it("rejects non-integer array indices", () => {
+    expect(() => setAtPath(root, ["a", "b", 1.5], 9)).toThrow("out of range");
+  });
+
   it("deletes array items and object keys", () => {
     const withoutItem = deleteAtPath(root, ["a", "b", 1]);
     expect(getAtPath(withoutItem, ["a", "b"])).toEqual([1, { c: 3 }]);
@@ -32,6 +49,12 @@ describe("jsonPath", () => {
   it("renames object keys", () => {
     const next = renameKey(root, ["a"], "b", "items");
     expect(getAtPath(next, ["a", "items", 0])).toBe(1);
+  });
+
+  it("throws when renaming onto an existing key", () => {
+    expect(() => renameKey({ a: 1, b: 2 }, [], "a", "b")).toThrow(
+      'Cannot rename to existing key "b".',
+    );
   });
 
   it("formats paths for display", () => {
