@@ -57,25 +57,52 @@ function openWithInputElement(): Promise<
   { text: string; fileName: string } | undefined
 > {
   return new Promise((resolve) => {
+    let settled = false;
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "application/json,.json";
+
+    const settle = (
+      value: { text: string; fileName: string } | undefined,
+    ): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      window.removeEventListener("focus", onWindowFocus);
+      resolve(value);
+    };
+
+    const onWindowFocus = (): void => {
+      // Some browsers omit `cancel` when the dialog is dismissed; after focus
+      // returns, treat a missing selection as cancel.
+      window.setTimeout(() => {
+        if (!input.files?.length) {
+          settle(undefined);
+        }
+      }, 300);
+    };
+
     input.addEventListener("change", () => {
       const file = input.files?.[0];
       if (!file) {
-        resolve(undefined);
+        settle(undefined);
         return;
       }
       file
         .text()
         .then((text) => {
-          resolve({ fileName: file.name, text });
+          settle({ fileName: file.name, text });
         })
         .catch((error: unknown) => {
           console.error(error);
-          resolve(undefined);
+          settle(undefined);
         });
     });
+    input.addEventListener("cancel", () => {
+      settle(undefined);
+    });
+    window.addEventListener("focus", onWindowFocus, { once: true });
     input.click();
   });
 }
