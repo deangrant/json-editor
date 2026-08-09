@@ -3,6 +3,9 @@
 Browser SPA for viewing, editing, formatting, repairing, transforming, and
 validating JSON. There is no backend — open and save use the browser file APIs.
 
+**Live demo:** [deangrant.github.io/json-editor](https://deangrant.github.io/json-editor)
+(deployed from `main` via GitHub Actions).
+
 ## Features
 
 - Tree, text (CodeMirror), and table editor modes
@@ -72,8 +75,10 @@ equivalent. After React/TSX edits, run `pnpm run doctor:changed` in addition to
 | [Lint](.github/workflows/lint.yml) | Biome CI, lockfile validation, React Doctor (`blocking: error`) |
 | [Test](.github/workflows/test.yml) | Typecheck, Vitest |
 | [Dependency Audit](.github/workflows/audit.yml) | `pnpm audit` |
+| [Deploy GitHub Pages](.github/workflows/pages.yml) | Build web app with `BASE_PATH=/json-editor/` and deploy |
 
-Triggers: push to `main` and pull requests. Dependabot updates npm and GitHub
+Lint, Test, and Audit run on push to `main` and pull requests. Pages deploys
+on push to `main` (and `workflow_dispatch`). Dependabot updates npm and GitHub
 Actions weekly ([`.github/dependabot.yml`](.github/dependabot.yml)).
 
 ## Layout
