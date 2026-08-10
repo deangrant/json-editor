@@ -25,7 +25,7 @@ catalog:
   typescript: 7.0.2
   vite: 8.1.5
   vitest: 4.1.10
-  happy-dom: 20.10.6
+  happy-dom: 20.11.0
 
 # Dependency install/build scripts run only when listed here. true = allow,
 # false = deny; unlisted packages fail install (strictDepBuilds).
