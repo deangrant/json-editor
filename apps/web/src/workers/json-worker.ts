@@ -134,7 +134,26 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
  */
 function handleJob(id: string, job: WorkerJob): WorkerResponse {
   try {
-    return runHandler(job.type, id, job);
+    switch (job.type) {
+      case "format":
+        return handlers.format(id, job);
+      case "parse":
+        return handlers.parse(id, job);
+      case "repair":
+        return handlers.repair(id, job);
+      case "transform":
+        return handlers.transform(id, job);
+      case "validate":
+        return handlers.validate(id, job);
+      default: {
+        const _exhaustive: never = job;
+        return {
+          error: `Unknown job type: ${String((_exhaustive as WorkerJob).type)}`,
+          id,
+          ok: false,
+        };
+      }
+    }
   } catch (cause) {
     return {
       error: cause instanceof Error ? cause.message : String(cause),
@@ -142,19 +161,4 @@ function handleJob(id: string, job: WorkerJob): WorkerResponse {
       ok: false,
     };
   }
-}
-
-/**
- * Dispatches a typed worker job to its handler.
- * @param type Job discriminant.
- * @param id Request id.
- * @param job Job payload matching `type`.
- * @returns Response envelope.
- */
-function runHandler<K extends WorkerJob["type"]>(
-  type: K,
-  id: string,
-  job: Extract<WorkerJob, { type: K }>,
-): WorkerResponse {
-  return handlers[type](id, job);
 }
