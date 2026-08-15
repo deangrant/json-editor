@@ -147,4 +147,41 @@ describe("TransformEngine", () => {
     expect(zero).toEqual({ ok: true, value: [] });
     expect(negative).toEqual({ ok: true, value: [] });
   });
+
+  it.each(["__proto__", "constructor", "prototype"] as const)(
+    "rejects pick of unsafe field %s",
+    (key) => {
+      const result = engine.preview(root, {
+        ops: [{ fields: [key], type: "pick" }],
+        rootPath: ["users"],
+      });
+
+      expect(result).toEqual({
+        message: `Unsafe object key "${key}".`,
+        ok: false,
+      });
+      expect(Object.hasOwn(Object.prototype as object, "polluted")).toBe(false);
+    },
+  );
+
+  it.each(["__proto__", "constructor", "prototype"] as const)(
+    "rejects map rename onto unsafe field %s",
+    (key) => {
+      const result = engine.preview(root, {
+        ops: [
+          {
+            renames: [{ from: "name", to: key }],
+            type: "map",
+          },
+        ],
+        rootPath: ["users"],
+      });
+
+      expect(result).toEqual({
+        message: `Unsafe object key "${key}".`,
+        ok: false,
+      });
+      expect(Object.hasOwn(Object.prototype as object, "polluted")).toBe(false);
+    },
+  );
 });
