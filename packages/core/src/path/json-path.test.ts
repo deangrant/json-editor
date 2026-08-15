@@ -77,4 +77,24 @@ describe("jsonPath", () => {
     const next = setAtPath({}, ["nested", "leaf"], 1);
     expect(next).toEqual({ nested: { leaf: 1 } });
   });
+
+  it.each(["__proto__", "constructor", "prototype"] as const)(
+    "rejects unsafe object key %s when setting",
+    (key) => {
+      expect(() => setAtPath({}, [key], { polluted: true })).toThrow(
+        `Unsafe object key "${key}".`,
+      );
+      expect(Object.hasOwn(Object.prototype as object, "polluted")).toBe(false);
+    },
+  );
+
+  it.each(["__proto__", "constructor", "prototype"] as const)(
+    "rejects renaming onto unsafe object key %s",
+    (key) => {
+      expect(() => renameKey({ a: { polluted: true } }, [], "a", key)).toThrow(
+        `Unsafe object key "${key}".`,
+      );
+      expect(Object.hasOwn(Object.prototype as object, "polluted")).toBe(false);
+    },
+  );
 });

@@ -1,3 +1,4 @@
+import { assertSafeObjectKey } from "../object/assert-safe-object-key.js";
 import { getAtPath, setAtPath } from "../path/json-path.js";
 import type { JsonValue } from "../types/json.types.js";
 import type { ITransformEngine } from "./i-transform-engine.js";
@@ -200,6 +201,7 @@ function pickFields(item: JsonValue, op: PickOp): JsonValue {
   }
   const next: { [key: string]: JsonValue } = {};
   for (const field of op.fields) {
+    assertSafeObjectKey(field);
     if (field in item) {
       next[field] = item[field] as JsonValue;
     }
@@ -219,6 +221,7 @@ function mapFields(item: JsonValue, op: MapOp): JsonValue {
   }
   const next: { [key: string]: JsonValue } = { ...item };
   for (const { from, to } of op.renames) {
+    assertSafeObjectKey(to);
     if (from in next) {
       next[to] = next[from] as JsonValue;
       if (from !== to) {

@@ -1,3 +1,4 @@
+import { assertSafeObjectKey } from "../object/assert-safe-object-key.js";
 import type {
   JsonPath,
   JsonPathSegment,
@@ -121,6 +122,8 @@ export function renameKey(
     return root;
   }
 
+  assertSafeObjectKey(toKey);
+
   const clone = structuredClone(root);
   const parent = parentPath.length === 0 ? clone : getAtPath(clone, parentPath);
 
@@ -225,6 +228,7 @@ function descendForWrite(
   }
 
   const child = current[segment] ?? emptyChild;
+  assertSafeObjectKey(segment);
   current[segment] = child;
   return child;
 }
@@ -261,6 +265,7 @@ function writeLeaf(
     throw new Error("Expected object at write target.");
   }
 
+  assertSafeObjectKey(last);
   current[last] = value;
 }
 
