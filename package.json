@@ -2,7 +2,7 @@
   "author": "Dean Grant",
   "description": "Browser JSON editor monorepo — domain core and web app.",
   "devDependencies": {
-    "@biomejs/biome": "2.5.4",
+    "@biomejs/biome": "2.5.5",
     "react-doctor": "0.8.1",
     "typescript": "catalog:",
     "ultracite": "7.9.4"
