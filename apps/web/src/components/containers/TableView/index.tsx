@@ -291,12 +291,13 @@ function toTable(
   }
 
   if (Array.isArray(value)) {
-    const objectRows = value.every(
-      (item) =>
-        item !== null && typeof item === "object" && !Array.isArray(item),
-    );
-    if (!objectRows || value.length === 0) {
+    if (value.length === 0) {
       return;
+    }
+    for (const item of value) {
+      if (item === null || typeof item !== "object" || Array.isArray(item)) {
+        return;
+      }
     }
     const columns = collectColumns(value as Record<string, JsonValue>[]);
     return {
@@ -311,12 +312,13 @@ function toTable(
 
   if (value !== null && typeof value === "object") {
     const entries = Object.entries(value);
-    const objectRows = entries.every(
-      ([, item]) =>
-        item !== null && typeof item === "object" && !Array.isArray(item),
-    );
-    if (!objectRows || entries.length === 0) {
+    if (entries.length === 0) {
       return;
+    }
+    for (const [, item] of entries) {
+      if (item === null || typeof item !== "object" || Array.isArray(item)) {
+        return;
+      }
     }
     const objects = entries.map(
       ([, item]) => item as Record<string, JsonValue>,
