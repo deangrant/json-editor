@@ -30,10 +30,10 @@
     "verify": "pnpm exec biome ci . && pnpm run typecheck && pnpm test && pnpm lint:lockfile && pnpm audit"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.7",
-    "react-doctor": "0.9.1",
+    "@biomejs/biome": "catalog:",
+    "react-doctor": "catalog:",
     "typescript": "catalog:",
-    "ultracite": "7.10.2"
+    "ultracite": "catalog:"
   },
   "packageManager": "pnpm@11.8.0",
   "engines": {
