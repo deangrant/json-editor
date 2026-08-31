@@ -70,7 +70,8 @@ export function useDocumentController(
     stack.push({ json: initial.json, text: initial.text });
     return stack;
   });
-  const workerRef = useRef<WorkerPort | undefined>(undefined);
+  const workerSeed: WorkerPort | undefined = undefined;
+  const workerRef = useRef(workerSeed);
   const parseGenerationRef = useRef(0);
   const parseTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,

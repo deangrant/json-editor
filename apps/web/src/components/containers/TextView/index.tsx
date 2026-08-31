@@ -23,8 +23,10 @@ interface CodeMirrorView {
  */
 export function TextView() {
   const { state, setText } = useDocumentState();
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const viewRef = useRef<CodeMirrorView | null>(null);
+  const hostEl: HTMLDivElement | null = null;
+  const hostRef = useRef(hostEl);
+  const viewInstance: CodeMirrorView | null = null;
+  const viewRef = useRef(viewInstance);
   const setTextRef = useRef(setText);
   const initialTextRef = useRef(state.text);
   const applyingExternalChangeRef = useRef(false);
