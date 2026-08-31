@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 import { useDocumentState } from "../../../hooks/use-document.js";
 import { runPromise } from "../../../utils/run-promise.js";
@@ -23,8 +23,8 @@ interface CodeMirrorView {
  */
 export function TextView() {
   const { state, setText } = useDocumentState();
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const viewRef = useRef<CodeMirrorView | null>(null);
+  const hostRef: RefObject<HTMLDivElement | null> = useRef(null);
+  const viewRef: RefObject<CodeMirrorView | null> = useRef(null);
   const setTextRef = useRef(setText);
   const initialTextRef = useRef(state.text);
   const applyingExternalChangeRef = useRef(false);

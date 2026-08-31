@@ -7,6 +7,7 @@ import type {
 } from "@json-editor/core/types/json.types.js";
 import { CompositeValidator } from "@json-editor/core/validate/composite-validator.js";
 import {
+  type RefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -70,7 +71,7 @@ export function useDocumentController(
     stack.push({ json: initial.json, text: initial.text });
     return stack;
   });
-  const workerRef = useRef<WorkerPort | undefined>(undefined);
+  const workerRef: RefObject<WorkerPort | undefined> = useRef(undefined);
   const parseGenerationRef = useRef(0);
   const parseTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
