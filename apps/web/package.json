@@ -1,4 +1,15 @@
 {
+  "name": "@json-editor/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
   "dependencies": {
     "@codemirror/commands": "catalog:",
     "@codemirror/lang-json": "catalog:",
@@ -20,16 +31,5 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
-  },
-  "name": "@json-editor/web",
-  "private": true,
-  "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit && vite build",
-    "dev": "vite",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "type": "module",
-  "version": "1.0.0"
+  }
 }
