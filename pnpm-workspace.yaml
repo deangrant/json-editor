@@ -12,7 +12,7 @@ catalog:
   "@codemirror/language": 6.12.4
   "@codemirror/search": 6.7.1
   "@codemirror/state": 6.7.1
-  "@codemirror/view": 6.43.8
+  "@codemirror/view": 6.43.9
   "@fontsource/ibm-plex-mono": 5.3.0
   "@fontsource/ibm-plex-sans": 5.3.0
   "@types/node": 26.2.0
@@ -52,6 +52,7 @@ minimumReleaseAge: 30240
 
 # Exclude packages from the minimum release age policy.
 minimumReleaseAgeExclude:
+  - fast-uri@3.1.6 # CVE-2026-75931, fixed in 3.1.6 (2026-08-23T01:42:00.349Z).
 
 # Block transitive deps from exotic sources (git/URL); only registry, workspace,
 # or local. pnpm 11 default is true; set explicitly so intent survives default
