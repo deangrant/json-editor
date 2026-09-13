@@ -27,7 +27,7 @@ catalog:
   react-dom: 19.2.8
   typescript: 7.0.2
   ultracite: 7.10.6
-  vite: 8.2.1
+  vite: 8.2.2
   vitest: 4.1.11
 
 # Dependency install/build scripts run only when listed here. true = allow,
