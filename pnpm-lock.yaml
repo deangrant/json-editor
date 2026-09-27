@@ -25,8 +25,8 @@ catalogs:
       specifier: 6.7.4
       version: 6.7.4
     '@codemirror/view':
-      specifier: 6.43.9
-      version: 6.43.9
+      specifier: 6.43.11
+      version: 6.43.11
     '@fontsource/ibm-plex-mono':
       specifier: 5.3.0
       version: 5.3.0
@@ -112,7 +112,7 @@ importers:
         version: 6.7.4
       '@codemirror/view':
         specifier: 'catalog:'
-        version: 6.43.9
+        version: 6.43.11
       '@fontsource/ibm-plex-mono':
         specifier: 'catalog:'
         version: 5.3.0
@@ -333,8 +333,8 @@ packages:
   '@codemirror/state@6.7.4':
     resolution: {integrity: sha512-QhQIVRY+xHZDxwOSFrJ1eUMapJBUID3IdeAjf7dHO7zBUzSkyooHiodnalz5MG3iHzwixKMlAAyn7244y537EA==}
 
-  '@codemirror/view@6.43.9':
-    resolution: {integrity: sha512-sTuUzTpPMFebRhg6dawChoKKgndIwfjmJgKVxBefPElcU2NwQ6AFroupk0SFqEerQyZOGRfDNnSN8Dw/lMAsXw==}
+  '@codemirror/view@6.43.11':
+    resolution: {integrity: sha512-2+esucbQX6wB2JYi1eDvdCPFTA31BN8oSy6xCmk3G6CloV11yOvEjYk+gH7kLrP0MuHG94E8WDhjs5oMiu3+Wg==}
 
   '@emnapi/core@1.11.2':
     resolution: {integrity: sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==}
@@ -2433,7 +2433,7 @@ snapshots:
     dependencies:
       '@codemirror/language': 6.12.4
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.9
+      '@codemirror/view': 6.43.11
       '@lezer/common': 1.5.2
 
   '@codemirror/lang-json@6.0.2':
@@ -2444,7 +2444,7 @@ snapshots:
   '@codemirror/language@6.12.4':
     dependencies:
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.9
+      '@codemirror/view': 6.43.11
       '@lezer/common': 1.5.2
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.10
@@ -2453,14 +2453,14 @@ snapshots:
   '@codemirror/search@6.7.2':
     dependencies:
       '@codemirror/state': 6.7.4
-      '@codemirror/view': 6.43.9
+      '@codemirror/view': 6.43.11
       crelt: 1.0.7
 
   '@codemirror/state@6.7.4':
     dependencies:
       '@marijn/find-cluster-break': 1.0.3
 
-  '@codemirror/view@6.43.9':
+  '@codemirror/view@6.43.11':
     dependencies:
       '@codemirror/state': 6.7.4
       crelt: 1.0.7
