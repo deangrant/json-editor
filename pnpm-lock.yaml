@@ -19,8 +19,8 @@ catalogs:
       specifier: 6.12.4
       version: 6.12.4
     '@codemirror/search':
-      specifier: 6.7.1
-      version: 6.7.1
+      specifier: 6.7.2
+      version: 6.7.2
     '@codemirror/state':
       specifier: 6.7.4
       version: 6.7.4
@@ -106,7 +106,7 @@ importers:
         version: 6.12.4
       '@codemirror/search':
         specifier: 'catalog:'
-        version: 6.7.1
+        version: 6.7.2
       '@codemirror/state':
         specifier: 'catalog:'
         version: 6.7.4
@@ -327,8 +327,8 @@ packages:
   '@codemirror/language@6.12.4':
     resolution: {integrity: sha512-1q4PaT+o6PbgpkJt4Q8Fv5XJxTy4FUZ4MWETtyiDw3J0Pyr9E2vqcKL+k9wcvjNTIsauxvE7OfmWj3FRPHQ76A==}
 
-  '@codemirror/search@6.7.1':
-    resolution: {integrity: sha512-uMe5UO6PamJtSHrXhhHOzSX3ReWtiJrva6GnPMwSOrZtiExb5X5eExhr2OUZQVvdxPsKpY3Ro2mFbQadpPWmHA==}
+  '@codemirror/search@6.7.2':
+    resolution: {integrity: sha512-gUYkYhT2+n/+VGZ+8EzE5WFkYZUZYm1VOKDudIsNqh42uRVQJ0a6Yss9sdKT3MeOYfuL1N6AZA57oza0Oyr0LA==}
 
   '@codemirror/state@6.7.4':
     resolution: {integrity: sha512-QhQIVRY+xHZDxwOSFrJ1eUMapJBUID3IdeAjf7dHO7zBUzSkyooHiodnalz5MG3iHzwixKMlAAyn7244y537EA==}
@@ -2447,7 +2447,7 @@ snapshots:
       '@lezer/lr': 1.4.10
       style-mod: 4.1.3
 
-  '@codemirror/search@6.7.1':
+  '@codemirror/search@6.7.2':
     dependencies:
       '@codemirror/state': 6.7.4
       '@codemirror/view': 6.43.9
