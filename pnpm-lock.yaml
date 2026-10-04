@@ -67,8 +67,8 @@ catalogs:
       specifier: 7.0.2
       version: 7.0.2
     ultracite:
-      specifier: 7.11.0
-      version: 7.11.0
+      specifier: 7.11.1
+      version: 7.11.1
     vite:
       specifier: 8.2.2
       version: 8.2.2
@@ -91,7 +91,7 @@ importers:
         version: 7.0.2
       ultracite:
         specifier: 'catalog:'
-        version: 7.11.0(@biomejs/biome@2.5.12)(eslint@10.8.1(jiti@2.7.0))(oxlint@1.79.0)
+        version: 7.11.1(@biomejs/biome@2.5.12)(eslint@10.8.1(jiti@2.7.0))(oxlint@1.79.0)
 
   apps/web:
     dependencies:
@@ -2054,8 +2054,8 @@ packages:
     resolution: {integrity: sha512-rvKSBiC5zqCCiDZ9kAOszZcDvdAHwwIKJG33Ykj43OKcWsnmcBRL09YTU4nOeHZ8Y2a7l1MgTd08SBe9A8Qj6A==}
     engines: {node: '>=18'}
 
-  ultracite@7.11.0:
-    resolution: {integrity: sha512-HJByeIoO4Lhcing1k2sabI7BCHRqeMztXGYZm4Zcir7NXvidXLwDgLNZgSR4w3oPKPgx7CRTqzJitt/oPR34NA==}
+  ultracite@7.11.1:
+    resolution: {integrity: sha512-NHqXD/fpNpLyAWCU3AOfRppVvXtxVk0D+oWrEOUXOveAiQCoyCnx+vL34Fa/rnFPY2piYfdqNhghp/J04uQ6JQ==}
     hasBin: true
     peerDependencies:
       '@biomejs/biome': ^2.5.0
@@ -2247,9 +2247,6 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
-
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zod@4.5.4:
     resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
@@ -3211,8 +3208,8 @@ snapshots:
       '@babel/parser': 7.29.8
       eslint: 10.8.1(jiti@2.7.0)
       hermes-parser: 0.25.1
-      zod: 4.4.3
-      zod-validation-error: 4.0.2(zod@4.4.3)
+      zod: 4.5.4
+      zod-validation-error: 4.0.2(zod@4.5.4)
     transitivePeerDependencies:
       - supports-color
 
@@ -3927,7 +3924,7 @@ snapshots:
 
   uint8array-extras@1.5.0: {}
 
-  ultracite@7.11.0(@biomejs/biome@2.5.12)(eslint@10.8.1(jiti@2.7.0))(oxlint@1.79.0):
+  ultracite@7.11.1(@biomejs/biome@2.5.12)(eslint@10.8.1(jiti@2.7.0))(oxlint@1.79.0):
     dependencies:
       '@clack/prompts': 1.7.0
       cli-truncate: 6.1.1
@@ -4074,10 +4071,8 @@ snapshots:
 
   yoga-layout@3.2.1: {}
 
-  zod-validation-error@4.0.2(zod@4.4.3):
+  zod-validation-error@4.0.2(zod@4.5.4):
     dependencies:
-      zod: 4.4.3
-
-  zod@4.4.3: {}
+      zod: 4.5.4
 
   zod@4.5.4: {}
