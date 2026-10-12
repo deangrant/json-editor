@@ -25,7 +25,7 @@ blockExoticSubdeps: true
 # Shared dependency versions referenced by packages via `catalog:`.
 catalog:
   "@biomejs/biome": 2.5.14
-  "@codemirror/commands": 6.11.0
+  "@codemirror/commands": 6.11.1
   "@codemirror/lang-json": 6.0.2
   "@codemirror/language": 6.12.4
   "@codemirror/search": 6.7.2
