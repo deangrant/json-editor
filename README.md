@@ -42,7 +42,7 @@ Pinned versions live in [`package.json`](package.json) (`packageManager`) and
 ## Requirements
 
 - Node.js `>=22`
-- pnpm `11.8.0` (pinned via `packageManager`)
+- pnpm `12.5.1` (pinned via `packageManager`)
 
 ```bash
 corepack enable
