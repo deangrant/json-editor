@@ -45,7 +45,7 @@ catalog:
   react-dom: 19.3.0
   typescript: 7.0.2
   ultracite: 7.12.2
-  vite: 8.3.3
+  vite: 8.3.4
   vitest: 5.0.3
 
 # Fail install when the current Node/pnpm version is outside package.json
