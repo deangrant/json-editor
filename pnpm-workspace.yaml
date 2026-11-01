@@ -41,7 +41,7 @@ catalog:
   happy-dom: 21.0.4
   jsonrepair: 3.15.0
   react: 19.3.0
-  react-doctor: 0.9.14
+  react-doctor: 0.9.17
   react-dom: 19.3.0
   typescript: 7.0.2
   ultracite: 8.0.0
